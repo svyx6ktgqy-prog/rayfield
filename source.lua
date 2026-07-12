@@ -1051,6 +1051,49 @@ LoadingFrame.Version.Text = Release
 	end)
 	-- [FIN] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
 
+⁠	-- [INICIO] TOPBAR Y BOTONES TRASLÚCIDOS ROJOS (60%)
+	task.spawn(function()
+		local colorRojo = Color3.fromRGB(255, 0, 0) -- Rojo puro
+		local transparencia = 0.6 -- 60% de transparencia
+
+		-- 1. Aplicar al Topbar (Barra superior)
+		Topbar.BackgroundColor3 = colorRojo
+		Topbar.BackgroundTransparency = transparencia
+		
+		if Topbar:FindFirstChild("CornerRepair") then
+			Topbar.CornerRepair.BackgroundColor3 = colorRojo
+			Topbar.CornerRepair.BackgroundTransparency = transparencia
+		end
+		
+		if Topbar:FindFirstChild("Divider") then
+			Topbar.Divider.BackgroundColor3 = colorRojo
+			Topbar.Divider.BackgroundTransparency = transparencia
+		end
+
+		-- 2. Aplicar a los botones e íconos de la barra superior
+		local botones = {"Hide", "ChangeSize", "Settings", "Search", "Icon"}
+		for _, nombreBtn in ipairs(botones) do
+			local btn = Topbar:FindFirstChild(nombreBtn)
+			if btn and (btn:IsA("ImageLabel") or btn:IsA("ImageButton")) then
+				btn.ImageColor3 = colorRojo
+				btn.ImageTransparency = transparencia 
+			end
+		end
+
+		-- 3. Aplicar al Banner de Carga (Loading Banner)
+		if LoadingFrame and LoadingFrame:FindFirstChild("Banner") then
+			LoadingFrame.Banner.ImageColor3 = colorRojo
+			LoadingFrame.Banner.ImageTransparency = transparencia
+		end
+
+		-- 4. Bucle de seguridad: Evita que el sistema de Temas de Rayfield borre tu color
+		Topbar:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
+			Topbar.BackgroundColor3 = colorRojo
+			Topbar.BackgroundTransparency = transparencia
+		end)
+	end)
+	-- [FIN] TOPBAR Y BOTONES TRASLÚCIDOS ROJOS (60%)
+
 -- Thanks to Latte Softworks for the Lucide integration for Roblox
 local Icons = useStudio and require(script.Parent.icons) or loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua')
 -- Variables
