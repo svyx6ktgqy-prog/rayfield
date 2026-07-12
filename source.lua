@@ -980,7 +980,7 @@ LoadingFrame.Version.Text = Release
 			-- [INICIO] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
 	task.spawn(function()
 		-- Tu enlace directo (Ya actualizado al .jpeg)
-		local bgImageUrl = "https://raw.githubusercontent.com/svyx6ktgqy-prog/hermex11/refs/heads/main/assets/Rebug.jpeg" 
+		local bgImageUrl = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/Rebug.jpeg" 
 		local bgImageName = "Rebug_Background.jpeg"
 		
 		if type(writefile) == "function" and type(getcustomasset) == "function" then
