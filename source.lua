@@ -1051,7 +1051,7 @@ LoadingFrame.Version.Text = Release
 	end)
 	-- [FIN] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
 
-					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (CORREGIDA)
+					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (V3 - FILTRO INTELIGENTE)
 	task.spawn(function()
 		local colorRojo = Color3.fromRGB(255, 0, 0)
 		local transparenciaRojo = 0.6
@@ -1114,14 +1114,20 @@ LoadingFrame.Version.Text = Release
 					-- Nos aseguramos de NO tocar la barra roja superior
 					if not obj:IsDescendantOf(Topbar) and (not LoadingFrame or not obj:IsDescendantOf(LoadingFrame)) then
 						
-						-- Convertimos el nombre a minúsculas para que no se escape nada
+						-- Convertimos el nombre a minúsculas
 						local nombre = string.lower(obj.Name)
 						
-						-- CORRECCIÓN: Apuntamos EXCLUSIVAMENTE a los contenedores de botones.
-						-- Ignoramos "toggleelement", "dropdownelement", etc.
-						if string.find(nombre, "buttonelement") then
+						-- 1. Volvemos a tu método original para atrapar contenedores y botones
+						local atrapado = string.find(nombre, "button") or string.find(nombre, "element")
+						
+						-- 2. NUEVO ESCUDO: Identificamos qué cosas NO queremos tocar (switches, selectores, sliders)
+						local esSwitch = string.find(nombre, "toggle") or string.find(nombre, "switch")
+						local esSelector = string.find(nombre, "dropdown") or string.find(nombre, "slider") or string.find(nombre, "colorpicker")
+						
+						-- 3. Aplicamos el azul SOLO si fue atrapado y NO es un switch o selector
+						if atrapado and not (esSwitch or esSelector) then
 							
-							-- 1. Colorear el contenedor principal
+							-- Colorear el contenedor principal
 							if obj:IsA("Frame") or obj:IsA("TextButton") then
 								if obj.BackgroundTransparency < 1 then
 									obj.BackgroundColor3 = colorAzulOscuro
@@ -1129,14 +1135,13 @@ LoadingFrame.Version.Text = Release
 								end
 							end
 							
-							-- 2. Cazar escondites: colorear cualquier fondo secundario dentro del botón
+							-- Cazar escondites y bordes
 							for _, sub in pairs(obj:GetDescendants()) do
 								if sub:IsA("Frame") and sub.BackgroundTransparency < 1 then
 									sub.BackgroundColor3 = colorAzulOscuro
 									sub.BackgroundTransparency = transparenciaAzul
 								end
 								
-								-- 3. Cazar bordes grises (UIStrokes) que mantienen el color original
 								if sub:IsA("UIStroke") then
 									sub.Color = colorAzulOscuro
 									sub.Transparency = transparenciaAzul
@@ -1150,7 +1155,7 @@ LoadingFrame.Version.Text = Release
 			
 		end
 	end)
-	-- [FIN] INYECCIÓN BLINDADA COMPLETA (CORREGIDA)
+	-- [FIN] INYECCIÓN BLINDADA COMPLETA (V3)
 
 -- [INICIO] INYECCIÓN SEGURA (SIN BLOQUEAR UI)
 task.spawn(function()
