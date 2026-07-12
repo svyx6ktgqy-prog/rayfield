@@ -1655,10 +1655,9 @@ local function Unhide()
 	TweenService:Create(Main.Topbar.Title, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {TextTransparency = 0}):Play()
 
 	if MPrompt then
-		-- ELIMINAMOS EL TWEEN QUE RESETEABA EL TAMAÑO Y POSICIÓN
-		-- Solo realizamos una animación suave de desvanecimiento (Fade Out)
-		TweenService:Create(MPrompt, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {BackgroundTransparency = 1}):Play()
-		
+		TweenService:Create(MPrompt, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Size = UDim2.new(0, 40, 0, 10), Position = UDim2.new(0.5, 0, 0, -50), BackgroundTransparency = 1}):Play()
+		TweenService:Create(MPrompt.Title, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
+
 		task.spawn(function()
 			task.wait(0.5)
 			MPrompt.Visible = false
@@ -1683,7 +1682,6 @@ local function Unhide()
 
 		end
 	end
-end
 
 	setTabButtonsVisible(true)
 
