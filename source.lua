@@ -773,7 +773,7 @@ do
 	local AssetBaseURL = "https://github.com/SiriusSoftwareLtd/Rayfield/blob/main/assets/"
 
 	local assetFiles = {
-		["111263549366178"] = AssetBaseURL.."111263549366178.png?raw=true",
+		["666"] = AssetBaseURL.."666.png?raw=true",
 		["77891951053543"] = AssetBaseURL.."77891951053543.png?raw=true",
 		["78137979054938"] = AssetBaseURL.."78137979054938.png?raw=true",
 		["80503127983237"] = AssetBaseURL.."80503127983237.png?raw=true",
@@ -878,7 +878,7 @@ do
 	Rayfield.Main.Search.Shadow.Image = customAssets[tostring(5587865193)]
 	Rayfield.Notifications.Template.Icon.Image = customAssets[tostring(77891951053543)]
 	Rayfield.Notifications.Template.Shadow.Image = customAssets[tostring(3523728077)]
-	Rayfield.Loading.Banner.Image = customAssets[tostring(111263549366178)]
+	Rayfield.Loading.Banner.Image = customAssets[tostring(666)]
 
 end -- custom asset block
 
