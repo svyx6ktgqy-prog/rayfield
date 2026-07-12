@@ -1051,7 +1051,7 @@ LoadingFrame.Version.Text = Release
 	end)
 	-- [FIN] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
 
-					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (V3 - FILTRO INTELIGENTE)
+					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (V4 - SIN DAÑO COLATERAL)
 	task.spawn(function()
 		local colorRojo = Color3.fromRGB(255, 0, 0)
 		local transparenciaRojo = 0.6
@@ -1111,23 +1111,14 @@ LoadingFrame.Version.Text = Release
 				local ventanaPrincipal = Topbar.Parent
 				
 				for _, obj in pairs(ventanaPrincipal:GetDescendants()) do
-					-- Nos aseguramos de NO tocar la barra roja superior
 					if not obj:IsDescendantOf(Topbar) and (not LoadingFrame or not obj:IsDescendantOf(LoadingFrame)) then
 						
-						-- Convertimos el nombre a minúsculas
 						local nombre = string.lower(obj.Name)
 						
-						-- 1. Volvemos a tu método original para atrapar contenedores y botones
-						local atrapado = string.find(nombre, "button") or string.find(nombre, "element")
-						
-						-- 2. NUEVO ESCUDO: Identificamos qué cosas NO queremos tocar (switches, selectores, sliders)
-						local esSwitch = string.find(nombre, "toggle") or string.find(nombre, "switch")
-						local esSelector = string.find(nombre, "dropdown") or string.find(nombre, "slider") or string.find(nombre, "colorpicker")
-						
-						-- 3. Aplicamos el azul SOLO si fue atrapado y NO es un switch o selector
-						if atrapado and not (esSwitch or esSelector) then
+						-- Volvemos a buscar "button" y "element" para recuperar los fondos de los contenedores
+						if string.find(nombre, "button") or string.find(nombre, "element") then
 							
-							-- Colorear el contenedor principal
+							-- 1. Colorear SOLO el contenedor principal (para que quede traslúcido)
 							if obj:IsA("Frame") or obj:IsA("TextButton") then
 								if obj.BackgroundTransparency < 1 then
 									obj.BackgroundColor3 = colorAzulOscuro
@@ -1135,13 +1126,10 @@ LoadingFrame.Version.Text = Release
 								end
 							end
 							
-							-- Cazar escondites y bordes
-							for _, sub in pairs(obj:GetDescendants()) do
-								if sub:IsA("Frame") and sub.BackgroundTransparency < 1 then
-									sub.BackgroundColor3 = colorAzulOscuro
-									sub.BackgroundTransparency = transparenciaAzul
-								end
-								
+							-- 2. LA SOLUCIÓN: Cambiamos GetDescendants por GetChildren.
+							-- Esto aplica el color al borde del contenedor, pero se niega a entrar 
+							-- a dañar las piezas internas del switch o selector.
+							for _, sub in pairs(obj:GetChildren()) do
 								if sub:IsA("UIStroke") then
 									sub.Color = colorAzulOscuro
 									sub.Transparency = transparenciaAzul
@@ -1155,7 +1143,7 @@ LoadingFrame.Version.Text = Release
 			
 		end
 	end)
-	-- [FIN] INYECCIÓN BLINDADA COMPLETA (V3)
+	-- [FIN] INYECCIÓN BLINDADA COMPLETA (V4)
 
 -- [INICIO] INYECCIÓN SEGURA (SIN BLOQUEAR UI)
 task.spawn(function()
