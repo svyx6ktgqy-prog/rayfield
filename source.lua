@@ -1051,18 +1051,15 @@ LoadingFrame.Version.Text = Release
 	end)
 	-- [FIN] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
 
-				-- [INICIO] INYECCIÓN BLINDADA COMPLETA (TOPBAR ROJO + BOTONES AZULES)
+					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (NIVEL DIOS)
 	task.spawn(function()
-		-- Variables Topbar y Banner (Rojo)
 		local colorRojo = Color3.fromRGB(255, 0, 0)
 		local transparenciaRojo = 0.6
 		local colorBlanco = Color3.fromRGB(255, 255, 255)
 		
-		-- Variables Botones UI (Azul oscuro)
 		local colorAzulOscuro = Color3.fromRGB(15, 30, 70)
 		local transparenciaAzul = 0.5 
 
-		-- Bucle continuo unificado: anula animaciones nativas sin causar lag
 		while task.wait(0.1) do
 			
 			-- ==========================================
@@ -1082,7 +1079,6 @@ LoadingFrame.Version.Text = Release
 					Topbar.Divider.BackgroundTransparency = transparenciaRojo
 				end
 
-				-- Procesar elementos dentro de la barra
 				for _, obj in pairs(Topbar:GetDescendants()) do
 					if obj:IsA("Frame") and obj.Name ~= "CornerRepair" and obj.Name ~= "Divider" then
 						if obj.BackgroundTransparency < 1 then
@@ -1099,38 +1095,53 @@ LoadingFrame.Version.Text = Release
 				end
 			end
 
-			-- Proteger el Banner de carga
 			if LoadingFrame and LoadingFrame:FindFirstChild("Banner") then
 				LoadingFrame.Banner.ImageColor3 = colorRojo
 				LoadingFrame.Banner.ImageTransparency = transparenciaRojo
-				
 				for _, obj in pairs(LoadingFrame.Banner:GetDescendants()) do
-					if obj:IsA("ImageLabel") then
-						obj.ImageColor3 = colorBlanco
-					elseif obj:IsA("TextLabel") then
-						obj.TextColor3 = colorBlanco
-					end
+					if obj:IsA("ImageLabel") then obj.ImageColor3 = colorBlanco
+					elseif obj:IsA("TextLabel") then obj.TextColor3 = colorBlanco end
 				end
 			end
 			
 			-- ==========================================
-			-- 2. FORZAR BOTONES DEL CUERPO (AZUL OSCURO)
+			-- 2. DESTRUCTOR DE GRISES (AZUL OSCURO)
 			-- ==========================================
 			if Topbar and Topbar.Parent then
 				local ventanaPrincipal = Topbar.Parent
 				
 				for _, obj in pairs(ventanaPrincipal:GetDescendants()) do
-					-- Buscamos Frames que sean botones, EXCLUYENDO los del Topbar
-					if obj:IsA("Frame") and string.find(obj.Name, "Button") and not obj:IsDescendantOf(Topbar) then
-						obj.BackgroundColor3 = colorAzulOscuro
-						obj.BackgroundTransparency = transparenciaAzul
+					-- Nos aseguramos de NO tocar la barra roja superior
+					if not obj:IsDescendantOf(Topbar) and (not LoadingFrame or not obj:IsDescendantOf(LoadingFrame)) then
 						
-						-- Teñir también los bordes internos o fondos secundarios del botón
-						for _, hijo in pairs(obj:GetChildren()) do
-							if hijo:IsA("Frame") and hijo.BackgroundTransparency < 1 then
-								hijo.BackgroundColor3 = colorAzulOscuro
-								hijo.BackgroundTransparency = transparenciaAzul
+						-- Convertimos el nombre a minúsculas para que no se escape nada
+						local nombre = string.lower(obj.Name)
+						
+						-- Rayfield nombra a sus bloques "buttonelement", "toggleelement", etc.
+						if string.find(nombre, "button") or string.find(nombre, "element") then
+							
+							-- 1. Colorear el contenedor principal
+							if obj:IsA("Frame") or obj:IsA("TextButton") then
+								if obj.BackgroundTransparency < 1 then
+									obj.BackgroundColor3 = colorAzulOscuro
+									obj.BackgroundTransparency = transparenciaAzul
+								end
 							end
+							
+							-- 2. Cazar escondites: colorear cualquier fondo secundario dentro del botón
+							for _, sub in pairs(obj:GetDescendants()) do
+								if sub:IsA("Frame") and sub.BackgroundTransparency < 1 then
+									sub.BackgroundColor3 = colorAzulOscuro
+									sub.BackgroundTransparency = transparenciaAzul
+								end
+								
+								-- 3. Cazar bordes grises (UIStrokes) que mantienen el color original
+								if sub:IsA("UIStroke") then
+									sub.Color = colorAzulOscuro
+									sub.Transparency = transparenciaAzul
+								end
+							end
+							
 						end
 					end
 				end
