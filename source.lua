@@ -1151,6 +1151,36 @@ LoadingFrame.Version.Text = Release
 	end)
 	-- [FIN] INYECCIÓN BLINDADA COMPLETA
 
+-- [INICIO] REEMPLAZO DE THUMB POR STICKER 2D
+if string.find(nombre, "toggle") then
+    -- Buscamos dentro del toggle el componente que actúa como el círculo (thumb)
+    for _, objDescendant in pairs(obj:GetDescendants()) do
+        -- El thumb suele ser un Frame redondeado, casi siempre llamado "Indicator" o "Dot"
+        -- También buscamos por el tamaño (los thumb suelen ser cuadrados pequeños)
+        if objDescendant:IsA("Frame") and (objDescendant.Name == "Indicator" or objDescendant.Name == "Dot" or objDescendant.Size == UDim2.new(0, 15, 0, 15)) then
+            
+            -- Ocultamos el círculo original de Rayfield
+            objDescendant.BackgroundTransparency = 1 
+            
+            -- Si ya pusimos el sticker, no lo volvemos a crear (evita duplicados)
+            if not objDescendant:FindFirstChild("CustomSticker") then
+                local sticker = Instance.new("ImageLabel")
+                sticker.Name = "CustomSticker"
+                -- Ajustamos el tamaño para que sea bien visible
+                sticker.Size = UDim2.new(2, 0, 2, 0)
+                sticker.Position = UDim2.new(-0.5, 0, -0.5, 0)
+                sticker.BackgroundTransparency = 1
+                
+                -- Inyectamos tu ID específico
+                sticker.Image = "rbxassetid://1484081522"
+                
+                sticker.Parent = objDescendant
+            end
+        end
+    end
+end
+-- [FIN] REEMPLAZO DE THUMB POR STICKER 2D
+
 -- Thanks to Latte Softworks for the Lucide integration for Roblox
 local Icons = useStudio and require(script.Parent.icons) or loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua')
 -- Variables
