@@ -1051,7 +1051,7 @@ LoadingFrame.Version.Text = Release
 	end)
 	-- [FIN] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
 
-					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (V5 - EXCAVADORA CON ESCUDO)
+					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (V6 - TOPBAR Y SPINNERS FIX)
 	task.spawn(function()
 		local colorRojo = Color3.fromRGB(255, 0, 0)
 		local transparenciaRojo = 0.6
@@ -1080,16 +1080,19 @@ LoadingFrame.Version.Text = Release
 				end
 
 				for _, obj in pairs(Topbar:GetDescendants()) do
-					if obj:IsA("Frame") and obj.Name ~= "CornerRepair" and obj.Name ~= "Divider" then
+					local nombreObj = string.lower(obj.Name)
+					-- Evitamos colorear los marcos que contienen los íconos
+					local esIcono = string.find(nombreObj, "icon") or string.find(nombreObj, "logo") or string.find(nombreObj, "image")
+					
+					if obj:IsA("Frame") and obj.Name ~= "CornerRepair" and obj.Name ~= "Divider" and not esIcono then
 						if obj.BackgroundTransparency < 1 then
 							obj.BackgroundColor3 = colorRojo
 							obj.BackgroundTransparency = transparenciaRojo
 						end
 					end
-					if obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
-						obj.ImageColor3 = colorBlanco
-					end
-					if obj:IsA("TextLabel") or obj:IsA("TextBox") then
+					
+					-- Mantenemos el texto blanco, pero dejamos los íconos tranquilos (eliminamos obj.ImageColor3)
+					if (obj:IsA("TextLabel") or obj:IsA("TextBox")) and not esIcono then
 						obj.TextColor3 = colorBlanco
 					end
 				end
@@ -1099,8 +1102,9 @@ LoadingFrame.Version.Text = Release
 				LoadingFrame.Banner.ImageColor3 = colorRojo
 				LoadingFrame.Banner.ImageTransparency = transparenciaRojo
 				for _, obj in pairs(LoadingFrame.Banner:GetDescendants()) do
-					if obj:IsA("ImageLabel") then obj.ImageColor3 = colorBlanco
-					elseif obj:IsA("TextLabel") then obj.TextColor3 = colorBlanco end
+					if obj:IsA("TextLabel") then 
+						obj.TextColor3 = colorBlanco 
+					end
 				end
 			end
 			
@@ -1115,20 +1119,17 @@ LoadingFrame.Version.Text = Release
 						
 						local nombre = string.lower(obj.Name)
 						
-						-- Atrapamos contenedores principales ("button" o "element")
 						if string.find(nombre, "button") or string.find(nombre, "element") then
 							
-							-- Coloreamos el marco principal (si es que tiene color propio)
 							if (obj:IsA("Frame") or obj:IsA("TextButton")) and obj.BackgroundTransparency < 1 then
 								obj.BackgroundColor3 = colorAzulOscuro
 								obj.BackgroundTransparency = transparenciaAzul
 							end
 							
-							-- LA SOLUCIÓN: Volvemos a escarbar profundo, pero bloqueando mecanismos
 							for _, sub in pairs(obj:GetDescendants()) do
 								local subNombre = string.lower(sub.Name)
 								
-								-- Lista de protección: Todo lo que suene a mecanismo interactivo
+								-- ESCUDO EXPANDIDO: Añadimos las piezas de los Spinners y Dropdowns
 								local esMecanismo = string.find(subNombre, "toggle")
 									or string.find(subNombre, "switch")
 									or string.find(subNombre, "indicator")
@@ -1140,10 +1141,14 @@ LoadingFrame.Version.Text = Release
 									or string.find(subNombre, "icon")
 									or string.find(subNombre, "image")
 									or string.find(subNombre, "picker")
+									or string.find(subNombre, "spinner")  -- Nuevo
+									or string.find(subNombre, "arrow")    -- Nuevo
+									or string.find(subNombre, "list")     -- Nuevo
+									or string.find(subNombre, "value")    -- Nuevo
+									or string.find(subNombre, "box")      -- Nuevo
+									or string.find(subNombre, "hitbox")   -- Nuevo
 
-								-- Si NO es un mecanismo, entonces debe ser el fondo gris oscuro que buscamos
 								if not esMecanismo then
-									
 									if sub:IsA("Frame") and sub.BackgroundTransparency < 1 then
 										sub.BackgroundColor3 = colorAzulOscuro
 										sub.BackgroundTransparency = transparenciaAzul
@@ -1153,7 +1158,6 @@ LoadingFrame.Version.Text = Release
 										sub.Color = colorAzulOscuro
 										sub.Transparency = transparenciaAzul
 									end
-									
 								end
 							end
 							
@@ -1164,7 +1168,7 @@ LoadingFrame.Version.Text = Release
 			
 		end
 	end)
-	-- [FIN] INYECCIÓN BLINDADA COMPLETA (V5)
+	-- [FIN] INYECCIÓN BLINDADA COMPLETA (V6)
 
 -- [INICIO] INYECCIÓN SEGURA (SIN BLOQUEAR UI)
 task.spawn(function()
