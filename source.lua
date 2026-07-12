@@ -1560,12 +1560,13 @@ end
 
 local function Hide(notify: boolean?)
 	if MPrompt then
-		MPrompt.Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-		MPrompt.Position = UDim2.new(0.5, 0, 0, -50)
-		MPrompt.Size = UDim2.new(0, 40, 0, 10)
-		MPrompt.BackgroundTransparency = 1
-		MPrompt.Title.TextTransparency = 1
-		MPrompt.Visible = true
+		-- Eliminamos todas las líneas que cambian el diseño (Size, Color, Transparency)
+		-- Para que el botón mantenga tu formato circular personalizado.
+		-- Solo mantenemos la visibilidad y, opcionalmente, la posición si es necesario.
+		
+		MPrompt.Visible = true 
+		-- Si quieres que se mueva a algún lugar específico al ocultar, cámbialo aquí:
+		-- MPrompt.Position = UDim2.new(0.5, 0, 0, 20) 
 	end
 
 	task.spawn(closeSearch)
@@ -1578,6 +1579,7 @@ local function Hide(notify: boolean?)
 			RayfieldLibrary:Notify({Title = "Interface Hidden", Content = "The interface has been hidden, you can unhide the interface by tapping " .. tostring(getSetting("General", "rayfieldOpen")) .. ".", Duration = 7, Image = 4400697855})
 		end
 	end
+end
 
 	TweenService:Create(Main, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Size = UDim2.new(0, 470, 0, 0)}):Play()
 	TweenService:Create(Main.Topbar, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Size = UDim2.new(0, 470, 0, 45)}):Play()
