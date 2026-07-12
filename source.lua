@@ -967,7 +967,7 @@ LoadingFrame.Version.Text = Release
 			darkTint.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 			-- ⚠️ Si quieres ver la imagen MÁS CLARA, baja el 0.35 a 0.1 o 0.2
 			-- ⚠️ Si la quieres MÁS OSCURA, súbelo a 0.5 o 0.6
-			darkTint.BackgroundTransparency = 0.35 
+			darkTint.BackgroundTransparency = 0.1 
 			darkTint.ZIndex = 2 
 			darkTint.BorderSizePixel = 0
 			
