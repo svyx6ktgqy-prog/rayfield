@@ -1051,7 +1051,7 @@ LoadingFrame.Version.Text = Release
 	end)
 	-- [FIN] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
 
-					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (V4 - SIN DAÑO COLATERAL)
+					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (V5 - EXCAVADORA CON ESCUDO)
 	task.spawn(function()
 		local colorRojo = Color3.fromRGB(255, 0, 0)
 		local transparenciaRojo = 0.6
@@ -1115,24 +1115,45 @@ LoadingFrame.Version.Text = Release
 						
 						local nombre = string.lower(obj.Name)
 						
-						-- Volvemos a buscar "button" y "element" para recuperar los fondos de los contenedores
+						-- Atrapamos contenedores principales ("button" o "element")
 						if string.find(nombre, "button") or string.find(nombre, "element") then
 							
-							-- 1. Colorear SOLO el contenedor principal (para que quede traslúcido)
-							if obj:IsA("Frame") or obj:IsA("TextButton") then
-								if obj.BackgroundTransparency < 1 then
-									obj.BackgroundColor3 = colorAzulOscuro
-									obj.BackgroundTransparency = transparenciaAzul
-								end
+							-- Coloreamos el marco principal (si es que tiene color propio)
+							if (obj:IsA("Frame") or obj:IsA("TextButton")) and obj.BackgroundTransparency < 1 then
+								obj.BackgroundColor3 = colorAzulOscuro
+								obj.BackgroundTransparency = transparenciaAzul
 							end
 							
-							-- 2. LA SOLUCIÓN: Cambiamos GetDescendants por GetChildren.
-							-- Esto aplica el color al borde del contenedor, pero se niega a entrar 
-							-- a dañar las piezas internas del switch o selector.
-							for _, sub in pairs(obj:GetChildren()) do
-								if sub:IsA("UIStroke") then
-									sub.Color = colorAzulOscuro
-									sub.Transparency = transparenciaAzul
+							-- LA SOLUCIÓN: Volvemos a escarbar profundo, pero bloqueando mecanismos
+							for _, sub in pairs(obj:GetDescendants()) do
+								local subNombre = string.lower(sub.Name)
+								
+								-- Lista de protección: Todo lo que suene a mecanismo interactivo
+								local esMecanismo = string.find(subNombre, "toggle")
+									or string.find(subNombre, "switch")
+									or string.find(subNombre, "indicator")
+									or string.find(subNombre, "slider")
+									or string.find(subNombre, "fill")
+									or string.find(subNombre, "bar")
+									or string.find(subNombre, "dropdown")
+									or string.find(subNombre, "scroll")
+									or string.find(subNombre, "icon")
+									or string.find(subNombre, "image")
+									or string.find(subNombre, "picker")
+
+								-- Si NO es un mecanismo, entonces debe ser el fondo gris oscuro que buscamos
+								if not esMecanismo then
+									
+									if sub:IsA("Frame") and sub.BackgroundTransparency < 1 then
+										sub.BackgroundColor3 = colorAzulOscuro
+										sub.BackgroundTransparency = transparenciaAzul
+									end
+									
+									if sub:IsA("UIStroke") then
+										sub.Color = colorAzulOscuro
+										sub.Transparency = transparenciaAzul
+									end
+									
 								end
 							end
 							
@@ -1143,7 +1164,7 @@ LoadingFrame.Version.Text = Release
 			
 		end
 	end)
-	-- [FIN] INYECCIÓN BLINDADA COMPLETA (V4)
+	-- [FIN] INYECCIÓN BLINDADA COMPLETA (V5)
 
 -- [INICIO] INYECCIÓN SEGURA (SIN BLOQUEAR UI)
 task.spawn(function()
