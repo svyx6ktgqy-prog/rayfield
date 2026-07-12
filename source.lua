@@ -1051,19 +1051,19 @@ LoadingFrame.Version.Text = Release
 	end)
 	-- [FIN] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
 
-					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (V6 - TOPBAR Y SPINNERS FIX)
+					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (V7 - SOLO TRASLUCIDEZ Y TOPBAR BLANCO)
 	task.spawn(function()
 		local colorRojo = Color3.fromRGB(255, 0, 0)
 		local transparenciaRojo = 0.6
 		local colorBlanco = Color3.fromRGB(255, 255, 255)
 		
-		local colorAzulOscuro = Color3.fromRGB(15, 30, 70)
-		local transparenciaAzul = 0.5 
+		-- Ya no usamos el color azul, solo el nivel de transparencia para los fondos
+		local transparenciaFondo = 0.5 
 
 		while task.wait(0.1) do
 			
 			-- ==========================================
-			-- 1. FORZAR TOPBAR Y BANNER (ROJO)
+			-- 1. FORZAR TOPBAR Y BANNER (ROJO E ÍCONOS BLANCOS)
 			-- ==========================================
 			if Topbar then
 				Topbar.BackgroundColor3 = colorRojo
@@ -1080,19 +1080,25 @@ LoadingFrame.Version.Text = Release
 				end
 
 				for _, obj in pairs(Topbar:GetDescendants()) do
-					local nombreObj = string.lower(obj.Name)
-					-- Evitamos colorear los marcos que contienen los íconos
-					local esIcono = string.find(nombreObj, "icon") or string.find(nombreObj, "logo") or string.find(nombreObj, "image")
-					
-					if obj:IsA("Frame") and obj.Name ~= "CornerRepair" and obj.Name ~= "Divider" and not esIcono then
+					-- Colorear de rojo los marcos
+					if obj:IsA("Frame") and obj.Name ~= "CornerRepair" and obj.Name ~= "Divider" then
 						if obj.BackgroundTransparency < 1 then
 							obj.BackgroundColor3 = colorRojo
 							obj.BackgroundTransparency = transparenciaRojo
 						end
 					end
 					
-					-- Mantenemos el texto blanco, pero dejamos los íconos tranquilos (eliminamos obj.ImageColor3)
-					if (obj:IsA("TextLabel") or obj:IsA("TextBox")) and not esIcono then
+					-- Forzar los íconos y botones de imagen a blanco
+					if obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
+						obj.ImageColor3 = colorBlanco
+						-- Si el ícono tiene un fondo gris oscuro (como el botón de cerrar), lo hacemos invisible
+						if obj.BackgroundTransparency < 1 then
+							obj.BackgroundTransparency = 1
+						end
+					end
+					
+					-- Forzar los textos a blanco
+					if obj:IsA("TextLabel") or obj:IsA("TextBox") then
 						obj.TextColor3 = colorBlanco
 					end
 				end
@@ -1102,14 +1108,16 @@ LoadingFrame.Version.Text = Release
 				LoadingFrame.Banner.ImageColor3 = colorRojo
 				LoadingFrame.Banner.ImageTransparency = transparenciaRojo
 				for _, obj in pairs(LoadingFrame.Banner:GetDescendants()) do
-					if obj:IsA("TextLabel") then 
+					if obj:IsA("ImageLabel") then 
+						obj.ImageColor3 = colorBlanco
+					elseif obj:IsA("TextLabel") then 
 						obj.TextColor3 = colorBlanco 
 					end
 				end
 			end
 			
 			-- ==========================================
-			-- 2. DESTRUCTOR DE GRISES (AZUL OSCURO)
+			-- 2. TRASLUCIDEZ DE ELEMENTOS (SIN COLOR EXTRA)
 			-- ==========================================
 			if Topbar and Topbar.Parent then
 				local ventanaPrincipal = Topbar.Parent
@@ -1121,15 +1129,15 @@ LoadingFrame.Version.Text = Release
 						
 						if string.find(nombre, "button") or string.find(nombre, "element") then
 							
+							-- Solo aplicamos la transparencia al marco principal
 							if (obj:IsA("Frame") or obj:IsA("TextButton")) and obj.BackgroundTransparency < 1 then
-								obj.BackgroundColor3 = colorAzulOscuro
-								obj.BackgroundTransparency = transparenciaAzul
+								obj.BackgroundTransparency = transparenciaFondo
 							end
 							
 							for _, sub in pairs(obj:GetDescendants()) do
 								local subNombre = string.lower(sub.Name)
 								
-								-- ESCUDO EXPANDIDO: Añadimos las piezas de los Spinners y Dropdowns
+								-- Nuestro escudo sigue activo para no hacer transparentes las partes de los mecanismos
 								local esMecanismo = string.find(subNombre, "toggle")
 									or string.find(subNombre, "switch")
 									or string.find(subNombre, "indicator")
@@ -1141,22 +1149,22 @@ LoadingFrame.Version.Text = Release
 									or string.find(subNombre, "icon")
 									or string.find(subNombre, "image")
 									or string.find(subNombre, "picker")
-									or string.find(subNombre, "spinner")  -- Nuevo
-									or string.find(subNombre, "arrow")    -- Nuevo
-									or string.find(subNombre, "list")     -- Nuevo
-									or string.find(subNombre, "value")    -- Nuevo
-									or string.find(subNombre, "box")      -- Nuevo
-									or string.find(subNombre, "hitbox")   -- Nuevo
+									or string.find(subNombre, "spinner")
+									or string.find(subNombre, "arrow")
+									or string.find(subNombre, "list")
+									or string.find(subNombre, "value")
+									or string.find(subNombre, "box")
+									or string.find(subNombre, "hitbox")
 
 								if not esMecanismo then
 									if sub:IsA("Frame") and sub.BackgroundTransparency < 1 then
-										sub.BackgroundColor3 = colorAzulOscuro
-										sub.BackgroundTransparency = transparenciaAzul
+										-- Solo aplicamos transparencia
+										sub.BackgroundTransparency = transparenciaFondo
 									end
 									
 									if sub:IsA("UIStroke") then
-										sub.Color = colorAzulOscuro
-										sub.Transparency = transparenciaAzul
+										-- Solo aplicamos transparencia al borde
+										sub.Transparency = transparenciaFondo
 									end
 								end
 							end
@@ -1168,7 +1176,7 @@ LoadingFrame.Version.Text = Release
 			
 		end
 	end)
-	-- [FIN] INYECCIÓN BLINDADA COMPLETA (V6)
+	-- [FIN] INYECCIÓN BLINDADA COMPLETA (V7)
 
 -- [INICIO] INYECCIÓN SEGURA (SIN BLOQUEAR UI)
 task.spawn(function()
