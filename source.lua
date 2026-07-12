@@ -884,6 +884,8 @@ do
  -- Proporción reducida: Ancho 225, Alto 314
  Rayfield.Loading.Banner.Size = UDim2.new(0, 225, 0, 314) 
 
+ task.wait(4)
+
 end -- custom asset block
 
 local minSize = Vector2.new(1024, 768)
