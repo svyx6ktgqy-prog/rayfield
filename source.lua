@@ -906,6 +906,63 @@ end
 local Main = Rayfield.Main
 local MPrompt = Rayfield:FindFirstChild('Prompt')
 local Topbar = Main.Topbar
+
+	-- [INICIO] MODIFICACIÓN DEL BOTÓN PROMPT (CÍRCULO CON ICON.PNG)
+	if MPrompt then
+		task.spawn(function()
+			-- 1. Darle tamaño cuadrado al botón original (55x55)
+			MPrompt.Size = UDim2.new(0, 55, 0, 55)
+			
+			-- 2. Hacer el fondo un círculo perfecto
+			local corner = MPrompt:FindFirstChildOfClass("UICorner")
+			if corner then 
+				corner.CornerRadius = UDim2.new(1, 0) 
+			end
+			
+			-- 3. Ocultar el texto original
+			local title = MPrompt:FindFirstChild("Title")
+			if title then 
+				title.Visible = false 
+			end
+			
+			-- 4. Crear el contenedor para tu logo
+			local logoBtn = Instance.new("ImageLabel")
+			logoBtn.Name = "CustomPromptLogo"
+			logoBtn.Parent = MPrompt
+			logoBtn.Size = UDim2.new(1, 0, 1, 0) -- Llena los 55x55
+			logoBtn.BackgroundTransparency = 1
+			logoBtn.ScaleType = Enum.ScaleType.Fit
+			
+			-- Redondear la imagen para que coincida
+			local logoCorner = Instance.new("UICorner")
+			logoCorner.CornerRadius = UDim2.new(1, 0)
+			logoCorner.Parent = logoBtn
+
+			-- 5. Descargar y aplicar icon.png desde tu GitHub
+			local iconUrl = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/main/assets/icon.png"
+			local iconName = "Rebug_Icon.png"
+			
+			if type(writefile) == "function" and type(getcustomasset) == "function" then
+				local requestFunc = request or http_request or (syn and syn.request)
+				
+				-- Descarga la imagen si no está guardada en la caché local
+				if not isfile(iconName) and requestFunc then
+					local req = requestFunc({Url = iconUrl, Method = "GET"})
+					if req and type(req) == "table" and req.Body then
+						writefile(iconName, req.Body)
+					end
+				end
+				
+				-- Carga la imagen al botón
+				local success, asset = pcall(getcustomasset, iconName)
+				if success then 
+					logoBtn.Image = asset 
+				end
+			end
+		end)
+	end
+	-- [FIN] MODIFICACIÓN DEL BOTÓN PROMPT
+
 local Elements = Main.Elements
 local LoadingFrame = Main.LoadingFrame
 local TabList = Main.TabList
