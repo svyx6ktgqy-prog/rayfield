@@ -1051,7 +1051,7 @@ LoadingFrame.Version.Text = Release
 	end)
 	-- [FIN] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
 
-					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (NIVEL DIOS)
+					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (CORREGIDA)
 	task.spawn(function()
 		local colorRojo = Color3.fromRGB(255, 0, 0)
 		local transparenciaRojo = 0.6
@@ -1117,8 +1117,9 @@ LoadingFrame.Version.Text = Release
 						-- Convertimos el nombre a minúsculas para que no se escape nada
 						local nombre = string.lower(obj.Name)
 						
-						-- Rayfield nombra a sus bloques "buttonelement", "toggleelement", etc.
-						if string.find(nombre, "button") or string.find(nombre, "element") then
+						-- CORRECCIÓN: Apuntamos EXCLUSIVAMENTE a los contenedores de botones.
+						-- Ignoramos "toggleelement", "dropdownelement", etc.
+						if string.find(nombre, "buttonelement") then
 							
 							-- 1. Colorear el contenedor principal
 							if obj:IsA("Frame") or obj:IsA("TextButton") then
@@ -1149,7 +1150,7 @@ LoadingFrame.Version.Text = Release
 			
 		end
 	end)
-	-- [FIN] INYECCIÓN BLINDADA COMPLETA
+	-- [FIN] INYECCIÓN BLINDADA COMPLETA (CORREGIDA)
 
 -- [INICIO] INYECCIÓN SEGURA (SIN BLOQUEAR UI)
 task.spawn(function()
