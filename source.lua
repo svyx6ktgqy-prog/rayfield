@@ -879,7 +879,10 @@ do
 	Rayfield.Notifications.Template.Icon.Image = customAssets[tostring(77891951053543)]
 	Rayfield.Notifications.Template.Shadow.Image = customAssets[tostring(3523728077)]
 	Rayfield.Loading.Banner.Image = customAssets["BannerCustom"]
-    Rayfield.Loading.Banner.ScaleType = Enum.ScaleType.Crop -- Agrega esta línea
+ Rayfield.Loading.Banner.ScaleType = Enum.ScaleType.Crop
+
+ -- Proporción reducida: Ancho 225, Alto 314
+ Rayfield.Loading.Banner.Size = UDim2.new(0, 225, 0, 314) 
 
 end -- custom asset block
 
