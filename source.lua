@@ -1151,6 +1151,58 @@ LoadingFrame.Version.Text = Release
 	end)
 	-- [FIN] INYECCIÓN BLINDADA COMPLETA
 
+-- [INICIO] INYECCIÓN SEGURA (SIN BLOQUEAR UI)
+task.spawn(function()
+    local colorRojo = Color3.fromRGB(255, 0, 0)
+    local transparenciaRojo = 0.6
+    local colorAzulOscuro = Color3.fromRGB(15, 30, 70)
+    local transparenciaAzul = 0.5
+
+    -- Función que aplica los cambios a cualquier objeto nuevo
+    local function aplicarEstilo(obj)
+        -- Si es Topbar o sus hijos
+        if obj:IsDescendantOf(Topbar) then
+            if obj:IsA("Frame") and obj.Name ~= "CornerRepair" and obj.Name ~= "Divider" then
+                obj.BackgroundColor3 = colorRojo
+                obj.BackgroundTransparency = transparenciaRojo
+            end
+        
+        -- Si es un Toggle
+        elseif string.find(string.lower(obj.Name), "toggle") then
+            -- Buscamos el "thumb" por sus características (evitando nombres problemáticos)
+            obj.ChildAdded:Connect(function(child)
+                if child:IsA("Frame") and child.Name ~= "CustomSticker" then
+                    child.BackgroundTransparency = 1
+                    local sticker = Instance.new("ImageLabel")
+                    sticker.Name = "CustomSticker"
+                    sticker.Size = UDim2.new(1.8, 0, 1.8, 0)
+                    sticker.Position = UDim2.new(-0.4, 0, -0.4, 0)
+                    sticker.BackgroundTransparency = 1
+                    sticker.Image = "rbxassetid://1484081522"
+                    sticker.Parent = child
+                end
+            end)
+            
+        -- Si es un Botón estándar
+        elseif string.find(string.lower(obj.Name), "button") then
+            if obj:IsA("Frame") then
+                obj.BackgroundColor3 = colorAzulOscuro
+                obj.BackgroundTransparency = transparenciaAzul
+            end
+        end
+    end
+
+    -- Escuchamos cuando se añaden nuevos elementos a la UI
+    if Topbar and Topbar.Parent then
+        Topbar.Parent.DescendantAdded:Connect(aplicarEstilo)
+        -- Aplicamos a lo que ya existe
+        for _, v in pairs(Topbar.Parent:GetDescendants()) do
+            aplicarEstilo(v)
+        end
+    end
+end)
+-- [FIN] INYECCIÓN SEGURA
+
 -- Thanks to Latte Softworks for the Lucide integration for Roblox
 local Icons = useStudio and require(script.Parent.icons) or loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua')
 -- Variables
