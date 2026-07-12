@@ -1051,48 +1051,57 @@ LoadingFrame.Version.Text = Release
 	end)
 	-- [FIN] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
 
-	-- [INICIO] TOPBAR Y BOTONES TRASLÚCIDOS ROJOS (60%)
+		-- [INICIO] TOPBAR Y BOTONES ROJOS TRASLÚCIDOS (OVERRIDE AGRESIVO)
 	task.spawn(function()
-		local colorRojo = Color3.fromRGB(255, 0, 0) -- Rojo puro
-		local transparencia = 0.6 -- 60% de transparencia
-
-		-- 1. Aplicar al Topbar (Barra superior)
-		Topbar.BackgroundColor3 = colorRojo
-		Topbar.BackgroundTransparency = transparencia
+		local colorRojo = Color3.fromRGB(255, 0, 0)
+		local transparencia = 0.6
 		
-		if Topbar:FindFirstChild("CornerRepair") then
-			Topbar.CornerRepair.BackgroundColor3 = colorRojo
-			Topbar.CornerRepair.BackgroundTransparency = transparencia
-		end
-		
-		if Topbar:FindFirstChild("Divider") then
-			Topbar.Divider.BackgroundColor3 = colorRojo
-			Topbar.Divider.BackgroundTransparency = transparencia
-		end
+		-- 1. Le damos una pequeña ventaja al script para que termine de cargar su gris oscuro
+		task.wait(0.5)
 
-		-- 2. Aplicar a los botones e íconos de la barra superior
-		local botones = {"Hide", "ChangeSize", "Settings", "Search", "Icon"}
-		for _, nombreBtn in ipairs(botones) do
-			local btn = Topbar:FindFirstChild(nombreBtn)
-			if btn and (btn:IsA("ImageLabel") or btn:IsA("ImageButton")) then
-				btn.ImageColor3 = colorRojo
-				btn.ImageTransparency = transparencia 
+		-- 2. Bucle rápido de 2 segundos para martillar el color rojo y vencer el tema nativo
+		for i = 1, 20 do
+			if Topbar then
+				Topbar.BackgroundColor3 = colorRojo
+				Topbar.BackgroundTransparency = transparencia
+				
+				if Topbar:FindFirstChild("CornerRepair") then
+					Topbar.CornerRepair.BackgroundColor3 = colorRojo
+					Topbar.CornerRepair.BackgroundTransparency = transparencia
+				end
+				
+				if Topbar:FindFirstChild("Divider") then
+					Topbar.Divider.BackgroundColor3 = colorRojo
+					Topbar.Divider.BackgroundTransparency = transparencia
+				end
+
+				-- Forzamos TODOS los íconos dentro de la Topbar sin importar su nombre exacto
+				for _, obj in pairs(Topbar:GetDescendants()) do
+					if obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
+						obj.ImageColor3 = colorRojo
+						obj.ImageTransparency = transparencia
+					end
+				end
 			end
-		end
 
-		-- 3. Aplicar al Banner de Carga (Loading Banner)
-		if LoadingFrame and LoadingFrame:FindFirstChild("Banner") then
-			LoadingFrame.Banner.ImageColor3 = colorRojo
-			LoadingFrame.Banner.ImageTransparency = transparencia
+			-- Forzamos el Banner
+			if LoadingFrame and LoadingFrame:FindFirstChild("Banner") then
+				LoadingFrame.Banner.ImageColor3 = colorRojo
+				LoadingFrame.Banner.ImageTransparency = transparencia
+			end
+			
+			task.wait(0.1) -- Se ejecuta 20 veces (2 segundos totales) para asegurar el redibujado
 		end
-
-		-- 4. Bucle de seguridad: Evita que el sistema de Temas de Rayfield borre tu color
-		Topbar:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
-			Topbar.BackgroundColor3 = colorRojo
-			Topbar.BackgroundTransparency = transparencia
-		end)
+		
+		-- 3. Candado final permanente por si interactúas con la ventana y Rayfield intenta restaurar el color
+		if Topbar then
+			Topbar:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
+				Topbar.BackgroundColor3 = colorRojo
+				Topbar.BackgroundTransparency = transparencia
+			end)
+		end
 	end)
-	-- [FIN] TOPBAR Y BOTONES TRASLÚCIDOS ROJOS (60%)
+	-- [FIN] OVERRIDE AGRESIVO
 
 -- Thanks to Latte Softworks for the Lucide integration for Roblox
 local Icons = useStudio and require(script.Parent.icons) or loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua')
