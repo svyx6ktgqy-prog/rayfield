@@ -913,30 +913,41 @@ local dragOffsetMobile = 150
 Rayfield.DisplayOrder = 100
 LoadingFrame.Version.Text = Release
 
-		-- [INICIO] INYECCIÓN DE FONDO PERSONALIZADO REBUG V2
+			-- [INICIO] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
 	task.spawn(function()
+		-- Tu enlace directo (Ya actualizado al .jpeg)
 		local bgImageUrl = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/Rebug.jpeg" 
 		local bgImageName = "Rebug_Background.jpeg"
 		
 		if type(writefile) == "function" and type(getcustomasset) == "function" then
-			if not isfile(bgImageName) then
+			-- Aseguramos la función de solicitud según el ejecutor
+			local requestFunc = request or http_request or (syn and syn.request)
+			
+			if not isfile(bgImageName) and requestFunc then
 				local req = requestFunc({Url = bgImageUrl, Method = "GET"})
 				if req and type(req) == "table" and req.Body then
 					writefile(bgImageName, req.Body)
 				end
 			end
 			
-			-- 1. Copiamos el borde redondeado EXACTO de Rayfield para que no sobresalgan puntas
+			-- 1. EL TRUCO MAESTRO: Empujamos todos los elementos de Rayfield hacia adelante (Capa 10)
+			-- Así evitamos que la imagen tape los botones.
+			for _, obj in ipairs(Main:GetDescendants()) do
+				if obj:IsA("GuiObject") then
+					obj.ZIndex = obj.ZIndex + 10
+				end
+			end
+			
 			local mainCorner = Main:FindFirstChildOfClass("UICorner")
 			local exactRadius = mainCorner and mainCorner.CornerRadius or UDim2.new(0, 8)
 			
-			-- 2. Creamos la imagen (Ahora 100% sólida, sin transparencia que deje ver el gris)
+			-- 2. Creamos tu imagen en la Capa 1 (Justo encima del gris oscuro)
 			local bgImage = Instance.new("ImageLabel")
 			bgImage.Name = "CustomBackgroundRebug"
 			bgImage.Parent = Main
 			bgImage.Size = UDim2.new(1, 0, 1, 0)
 			bgImage.Position = UDim2.new(0, 0, 0, 0)
-			bgImage.ZIndex = -1 -- Lo enviamos al fondo para asegurar que no tape ningún botón
+			bgImage.ZIndex = 1 -- Tapa el gris de Rayfield, pero respeta los elementos
 			bgImage.BackgroundTransparency = 1
 			bgImage.ScaleType = Enum.ScaleType.Crop
 			bgImage.ClipsDescendants = true
@@ -948,35 +959,33 @@ LoadingFrame.Version.Text = Release
 			local success, asset = pcall(getcustomasset, bgImageName)
 			if success then bgImage.Image = asset end
 			
-			-- 3. Creamos un tinte oscuro INDEPENDIENTE por encima de la imagen
-			-- Esto oscurece la imagen para que se lean las letras, manteniendo los colores vivos
+			-- 3. Creamos el tinte oscuro en la Capa 2 (Para que las letras blancas resalten)
 			local darkTint = Instance.new("Frame")
 			darkTint.Name = "DarkOverlay"
 			darkTint.Parent = bgImage
 			darkTint.Size = UDim2.new(1, 0, 1, 0)
-			darkTint.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Color del filtro oscuro
-			darkTint.ZIndex = 1
+			darkTint.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+			-- ⚠️ Si quieres ver la imagen MÁS CLARA, baja el 0.35 a 0.1 o 0.2
+			-- ⚠️ Si la quieres MÁS OSCURA, súbelo a 0.5 o 0.6
+			darkTint.BackgroundTransparency = 0.35 
+			darkTint.ZIndex = 2 
 			darkTint.BorderSizePixel = 0
 			
 			local tintCorner = Instance.new("UICorner")
 			tintCorner.CornerRadius = exactRadius
 			tintCorner.Parent = darkTint
 			
-			-- 4. Sincronizamos las animaciones de Rayfield para que se oculte suavemente
+			-- Sincronizamos animaciones de transparencia nativas de Rayfield
 			local function syncAnimations()
 				local baseTrans = Main.BackgroundTransparency
-				bgImage.ImageTransparency = baseTrans 
-				
-				-- El tinte va de 0.35 (visible) a 1 (invisible). 
-				-- NOTA: Si quieres que tu imagen se vea MÁS clara, baja el 0.35 a 0.2 o 0.1
+				bgImage.ImageTransparency = baseTrans
 				darkTint.BackgroundTransparency = 0.35 + (baseTrans * 0.65)
 			end
-			
 			syncAnimations()
 			Main:GetPropertyChangedSignal("BackgroundTransparency"):Connect(syncAnimations)
 		end
 	end)
-	-- [FIN] INYECCIÓN DE FONDO PERSONALIZADO REBUG V2
+	-- [FIN] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
 
 -- Thanks to Latte Softworks for the Lucide integration for Roblox
 local Icons = useStudio and require(script.Parent.icons) or loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua')
