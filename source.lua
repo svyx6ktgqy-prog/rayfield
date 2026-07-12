@@ -1051,17 +1051,16 @@ LoadingFrame.Version.Text = Release
 	end)
 	-- [FIN] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
 
-		-- [INICIO] TOPBAR Y BOTONES ROJOS TRASLÚCIDOS (OVERRIDE AGRESIVO)
+			-- [INICIO] TOPBAR Y BOTONES ROJOS (INYECCIÓN BLINDADA)
 	task.spawn(function()
 		local colorRojo = Color3.fromRGB(255, 0, 0)
 		local transparencia = 0.6
-		
-		-- 1. Le damos una pequeña ventaja al script para que termine de cargar su gris oscuro
-		task.wait(0.5)
+		local colorBlanco = Color3.fromRGB(255, 255, 255)
 
-		-- 2. Bucle rápido de 2 segundos para martillar el color rojo y vencer el tema nativo
-		for i = 1, 20 do
+		-- Bucle continuo: anula cualquier animación nativa de Rayfield para siempre
+		while task.wait(0.1) do
 			if Topbar then
+				-- 1. Forzar el fondo principal del Topbar
 				Topbar.BackgroundColor3 = colorRojo
 				Topbar.BackgroundTransparency = transparencia
 				
@@ -1075,33 +1074,45 @@ LoadingFrame.Version.Text = Release
 					Topbar.Divider.BackgroundTransparency = transparencia
 				end
 
-				-- Forzamos TODOS los íconos dentro de la Topbar sin importar su nombre exacto
+				-- 2. Procesar TODO dentro de la barra (Botones, Íconos y Textos)
 				for _, obj in pairs(Topbar:GetDescendants()) do
+					-- Si es un contenedor de fondo (como el fondo del botón), lo hacemos rojo
+					if obj:IsA("Frame") and obj.Name ~= "CornerRepair" and obj.Name ~= "Divider" then
+						if obj.BackgroundTransparency < 1 then
+							obj.BackgroundColor3 = colorRojo
+							obj.BackgroundTransparency = transparencia
+						end
+					end
+					
+					-- Si es un ícono o imagen (cerrar, minimizar, buscar), lo hacemos BLANCO para que se vea
 					if obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
-						obj.ImageColor3 = colorRojo
-						obj.ImageTransparency = transparencia
+						obj.ImageColor3 = colorBlanco
+					end
+					
+					-- Si hay texto (como el título de la UI), lo hacemos BLANCO
+					if obj:IsA("TextLabel") or obj:IsA("TextBox") then
+						obj.TextColor3 = colorBlanco
 					end
 				end
 			end
 
-			-- Forzamos el Banner
+			-- 3. Proteger el Banner de carga
 			if LoadingFrame and LoadingFrame:FindFirstChild("Banner") then
 				LoadingFrame.Banner.ImageColor3 = colorRojo
 				LoadingFrame.Banner.ImageTransparency = transparencia
+				
+				-- Salvar los íconos dentro del banner para que no desaparezcan
+				for _, obj in pairs(LoadingFrame.Banner:GetDescendants()) do
+					if obj:IsA("ImageLabel") then
+						obj.ImageColor3 = colorBlanco
+					elseif obj:IsA("TextLabel") then
+						obj.TextColor3 = colorBlanco
+					end
+				end
 			end
-			
-			task.wait(0.1) -- Se ejecuta 20 veces (2 segundos totales) para asegurar el redibujado
-		end
-		
-		-- 3. Candado final permanente por si interactúas con la ventana y Rayfield intenta restaurar el color
-		if Topbar then
-			Topbar:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
-				Topbar.BackgroundColor3 = colorRojo
-				Topbar.BackgroundTransparency = transparencia
-			end)
 		end
 	end)
-	-- [FIN] OVERRIDE AGRESIVO
+	-- [FIN] INYECCIÓN BLINDADA
 
 -- Thanks to Latte Softworks for the Lucide integration for Roblox
 local Icons = useStudio and require(script.Parent.icons) or loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua')
