@@ -913,6 +913,52 @@ local dragOffsetMobile = 150
 Rayfield.DisplayOrder = 100
 LoadingFrame.Version.Text = Release
 
+	-- [INICIO] INYECCIÓN DE FONDO PERSONALIZADO REBUG
+	task.spawn(function()
+		-- ⚠️ CAMBIA ESTO por tu URL (Debe ser el enlace 'Raw' de githubusercontent)
+		local bgImageUrl = "https://raw.githubusercontent.com/TU_USUARIO/TU_REPO/main/Rebug.png" 
+		local bgImageName = "Rebug_Background.png"
+		
+		-- Verificamos si el ejecutor soporta custom assets
+		if type(writefile) == "function" and type(getcustomasset) == "function" then
+			-- Descargamos la imagen si no existe
+			if not isfile(bgImageName) then
+				local req = requestFunc({Url = bgImageUrl, Method = "GET"})
+				if req and type(req) == "table" and req.Body then
+					writefile(bgImageName, req.Body)
+				end
+			end
+			
+			-- Creamos el contenedor de la imagen
+			local bgImage = Instance.new("ImageLabel")
+			bgImage.Name = "CustomBackgroundRebug"
+			bgImage.Parent = Main
+			bgImage.Size = UDim2.new(1, 0, 1, 0)
+			bgImage.Position = UDim2.new(0, 0, 0, 0)
+			bgImage.ZIndex = 0 -- Se coloca en el fondo para que no tape los botones
+			bgImage.BackgroundTransparency = 1
+			bgImage.ScaleType = Enum.ScaleType.Crop
+			
+			-- Aplicamos la imagen de forma segura
+			local success, asset = pcall(getcustomasset, bgImageName)
+			if success then bgImage.Image = asset end
+			
+			-- Sincronizamos la transparencia para que la imagen se oculte/muestre 
+			-- junto con las animaciones de Rayfield (como la tecla K para ocultar).
+			-- Nota: Le sumamos 0.25 para oscurecer el fondo y que las letras sigan siendo legibles.
+			bgImage.ImageTransparency = Main.BackgroundTransparency + 0.25
+			Main:GetPropertyChangedSignal("BackgroundTransparency"):Connect(function()
+				bgImage.ImageTransparency = Main.BackgroundTransparency + 0.25
+			end)
+			
+			-- Rayfield usa esquinas redondeadas, le aplicamos el mismo efecto a la imagen
+			local corner = Instance.new("UICorner")
+			corner.CornerRadius = UDim2.new(0, 8)
+			corner.Parent = bgImage
+		end
+	end)
+	-- [FIN] INYECCIÓN DE FONDO PERSONALIZADO REBUG
+
 -- Thanks to Latte Softworks for the Lucide integration for Roblox
 local Icons = useStudio and require(script.Parent.icons) or loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua')
 -- Variables
