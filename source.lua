@@ -1,12 +1,12 @@
 --[[
 
 	Rayfield Interface Suite
-	by Sirius
+	by hermax
 
-	shlex  | Designing + Programming
-	iRay   | Programming
-	Max    | Programming
-	Damian | Programming
+	hermax11  | Designing + Programming
+	minerx8888   | Programming
+	minerx6666    | Programming
+	free | Programming
 
 ]]
 
@@ -884,7 +884,7 @@ do
  -- Proporción reducida: Ancho 225, Alto 314
  Rayfield.Loading.Banner.Size = UDim2.new(0, 225, 0, 314) 
 
- task.wait(4)
+ task.wait(10)
 
 end -- custom asset block
 
