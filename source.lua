@@ -1051,57 +1051,59 @@ LoadingFrame.Version.Text = Release
 	end)
 	-- [FIN] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
 
-			-- [INICIO] TOPBAR Y BOTONES ROJOS (INYECCIÓN BLINDADA)
+				-- [INICIO] INYECCIÓN BLINDADA COMPLETA (TOPBAR ROJO + BOTONES AZULES)
 	task.spawn(function()
+		-- Variables Topbar y Banner (Rojo)
 		local colorRojo = Color3.fromRGB(255, 0, 0)
-		local transparencia = 0.6
+		local transparenciaRojo = 0.6
 		local colorBlanco = Color3.fromRGB(255, 255, 255)
+		
+		-- Variables Botones UI (Azul oscuro)
+		local colorAzulOscuro = Color3.fromRGB(15, 30, 70)
+		local transparenciaAzul = 0.5 
 
-		-- Bucle continuo: anula cualquier animación nativa de Rayfield para siempre
+		-- Bucle continuo unificado: anula animaciones nativas sin causar lag
 		while task.wait(0.1) do
+			
+			-- ==========================================
+			-- 1. FORZAR TOPBAR Y BANNER (ROJO)
+			-- ==========================================
 			if Topbar then
-				-- 1. Forzar el fondo principal del Topbar
 				Topbar.BackgroundColor3 = colorRojo
-				Topbar.BackgroundTransparency = transparencia
+				Topbar.BackgroundTransparency = transparenciaRojo
 				
 				if Topbar:FindFirstChild("CornerRepair") then
 					Topbar.CornerRepair.BackgroundColor3 = colorRojo
-					Topbar.CornerRepair.BackgroundTransparency = transparencia
+					Topbar.CornerRepair.BackgroundTransparency = transparenciaRojo
 				end
 				
 				if Topbar:FindFirstChild("Divider") then
 					Topbar.Divider.BackgroundColor3 = colorRojo
-					Topbar.Divider.BackgroundTransparency = transparencia
+					Topbar.Divider.BackgroundTransparency = transparenciaRojo
 				end
 
-				-- 2. Procesar TODO dentro de la barra (Botones, Íconos y Textos)
+				-- Procesar elementos dentro de la barra
 				for _, obj in pairs(Topbar:GetDescendants()) do
-					-- Si es un contenedor de fondo (como el fondo del botón), lo hacemos rojo
 					if obj:IsA("Frame") and obj.Name ~= "CornerRepair" and obj.Name ~= "Divider" then
 						if obj.BackgroundTransparency < 1 then
 							obj.BackgroundColor3 = colorRojo
-							obj.BackgroundTransparency = transparencia
+							obj.BackgroundTransparency = transparenciaRojo
 						end
 					end
-					
-					-- Si es un ícono o imagen (cerrar, minimizar, buscar), lo hacemos BLANCO para que se vea
 					if obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
 						obj.ImageColor3 = colorBlanco
 					end
-					
-					-- Si hay texto (como el título de la UI), lo hacemos BLANCO
 					if obj:IsA("TextLabel") or obj:IsA("TextBox") then
 						obj.TextColor3 = colorBlanco
 					end
 				end
 			end
 
-			-- 3. Proteger el Banner de carga
+			-- Proteger el Banner de carga
 			if LoadingFrame and LoadingFrame:FindFirstChild("Banner") then
 				LoadingFrame.Banner.ImageColor3 = colorRojo
-				LoadingFrame.Banner.ImageTransparency = transparencia
+				LoadingFrame.Banner.ImageTransparency = transparenciaRojo
 				
-				-- Salvar los íconos dentro del banner para que no desaparezcan
 				for _, obj in pairs(LoadingFrame.Banner:GetDescendants()) do
 					if obj:IsA("ImageLabel") then
 						obj.ImageColor3 = colorBlanco
@@ -1110,9 +1112,33 @@ LoadingFrame.Version.Text = Release
 					end
 				end
 			end
+			
+			-- ==========================================
+			-- 2. FORZAR BOTONES DEL CUERPO (AZUL OSCURO)
+			-- ==========================================
+			if Topbar and Topbar.Parent then
+				local ventanaPrincipal = Topbar.Parent
+				
+				for _, obj in pairs(ventanaPrincipal:GetDescendants()) do
+					-- Buscamos Frames que sean botones, EXCLUYENDO los del Topbar
+					if obj:IsA("Frame") and string.find(obj.Name, "Button") and not obj:IsDescendantOf(Topbar) then
+						obj.BackgroundColor3 = colorAzulOscuro
+						obj.BackgroundTransparency = transparenciaAzul
+						
+						-- Teñir también los bordes internos o fondos secundarios del botón
+						for _, hijo in pairs(obj:GetChildren()) do
+							if hijo:IsA("Frame") and hijo.BackgroundTransparency < 1 then
+								hijo.BackgroundColor3 = colorAzulOscuro
+								hijo.BackgroundTransparency = transparenciaAzul
+							end
+						end
+					end
+				end
+			end
+			
 		end
 	end)
-	-- [FIN] INYECCIÓN BLINDADA
+	-- [FIN] INYECCIÓN BLINDADA COMPLETA
 
 -- Thanks to Latte Softworks for the Lucide integration for Roblox
 local Icons = useStudio and require(script.Parent.icons) or loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua')
