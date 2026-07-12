@@ -1,5 +1,3 @@
-https://docs.sirius.menu/rayfield
-https://www.rayfield.gg/
-https://developer.sirius.menu/
+https://roblox.roblox.roblox/
 
 [![rayfield](https://user-images.githubusercontent.com/77512805/197843157-3485a6e4-7b18-4372-8277-f3a2e7bd0317.png)](https://sirius.menu/discord)
