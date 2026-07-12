@@ -916,8 +916,8 @@ LoadingFrame.Version.Text = Release
 	-- [INICIO] INYECCIÓN DE FONDO PERSONALIZADO REBUG
 	task.spawn(function()
 		-- ⚠️ CAMBIA ESTO por tu URL (Debe ser el enlace 'Raw' de githubusercontent)
-		local bgImageUrl = "https://raw.githubusercontent.com/TU_USUARIO/TU_REPO/main/Rebug.png" 
-		local bgImageName = "Rebug_Background.png"
+		local bgImageUrl = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/Rebug.jpeg" 
+		local bgImageName = "Rebug_Background.jpeg"
 		
 		-- Verificamos si el ejecutor soporta custom assets
 		if type(writefile) == "function" and type(getcustomasset) == "function" then
