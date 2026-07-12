@@ -907,7 +907,7 @@ local Main = Rayfield.Main
 local MPrompt = Rayfield:FindFirstChild('Prompt')
 local Topbar = Main.Topbar
 
-	-- [INICIO] MODIFICACIÓN DEL BOTÓN PROMPT (CÍRCULO CON ICON.PNG)
+		-- [INICIO] MODIFICACIÓN DEL BOTÓN PROMPT (CÍRCULO CON ICON.PNG)
 	if MPrompt then
 		task.spawn(function()
 			-- 1. Darle tamaño cuadrado al botón original (55x55)
@@ -919,10 +919,11 @@ local Topbar = Main.Topbar
 				corner.CornerRadius = UDim2.new(1, 0) 
 			end
 			
-			-- 3. Ocultar el texto original
-			local title = MPrompt:FindFirstChild("Title")
-			if title then 
-				title.Visible = false 
+			-- 3. DESTRUIR TODO EL TEXTO ("Show Rayfield", sombras, etc.)
+			for _, obj in ipairs(MPrompt:GetDescendants()) do
+				if obj:IsA("TextLabel") then
+					obj.Visible = false
+				end
 			end
 			
 			-- 4. Crear el contenedor para tu logo
