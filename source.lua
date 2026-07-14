@@ -1311,57 +1311,87 @@ LoadingFrame.Version.Text = Release
 	end)
 	-- [FIN] INYECCIÓN BLINDADA COMPLETA (V7)
 
--- [INICIO] INYECCIÓN SEGURA (SIN BLOQUEAR UI)
-task.spawn(function()
-    local colorRojo = Color3.fromRGB(255, 0, 0)
-    local transparenciaRojo = 0.6
-    local colorAzulOscuro = Color3.fromRGB(15, 30, 70)
-    local transparenciaAzul = 0.5
+-- [INYECCIÓN CORREGIDA Y SEGURA PARA TRACK Y THUMB]
+local function personalizarToggle(toggleObj)
+    -- Esperamos un momento a que el contenedor 'Switch' cargue por completo
+    local switchContainer = toggleObj:WaitForChild("Switch", 5)
+    if not switchContainer then return end
 
-    -- Función que aplica los cambios a cualquier objeto nuevo
-    local function aplicarEstilo(obj)
-        -- Si es Topbar o sus hijos
-        if obj:IsDescendantOf(Topbar) then
-            if obj:IsA("Frame") and obj.Name ~= "CornerRepair" and obj.Name ~= "Divider" then
-                obj.BackgroundColor3 = colorRojo
-                obj.BackgroundTransparency = transparenciaRojo
-            end
+    -- -------------------------------------------------------------
+    -- 1. PERSONALIZACIÓN DEL TRACK (El fondo del switch)
+    -- -------------------------------------------------------------
+    -- Hacemos invisible el fondo gris/azul original de Rayfield
+    switchContainer.BackgroundTransparency = 1
+    
+    -- Creamos tu Track personalizado (Fondo)
+    local customTrack = switchContainer:FindFirstChild("CustomTrack")
+    if not customTrack then
+        customTrack = Instance.new("ImageLabel")
+        customTrack.Name = "CustomTrack"
+        customTrack.Size = UDim2.new(1, 0, 1, 0) -- Rellena todo el switch original
+        customTrack.BackgroundTransparency = 1
+        customTrack.Image = "rbxassetid://TU_ID_DE_TRACK_AQUI" -- <--- COLOCA AQUÍ EL ID DE TU TRACK (FONDO)
+        customTrack.ZIndex = switchContainer.ZIndex
+        customTrack.Parent = switchContainer
+    end
+
+    -- -------------------------------------------------------------
+    -- 2. PERSONALIZACIÓN DEL THUMB (El botón deslizante)
+    -- -------------------------------------------------------------
+    -- Buscamos el Frame deslizante original dentro de Switch
+    local originalThumb = nil
+    for _, child in ipairs(switchContainer:GetChildren()) do
+        -- El thumb original suele ser un Frame que NO es la sombra ni nuestro CustomTrack
+        if child:IsA("Frame") and child.Name ~= "CustomTrack" and child.Name ~= "Shadow" then
+            originalThumb = child
+            break
+        end
+    end
+
+    if originalThumb then
+        -- Ocultamos el botón original (para que no se duplique visualmente)
+        originalThumb.BackgroundTransparency = 1
         
-        -- Si es un Toggle
-        elseif string.find(string.lower(obj.Name), "toggle") then
-            -- Buscamos el "thumb" por sus características (evitando nombres problemáticos)
-            obj.ChildAdded:Connect(function(child)
-                if child:IsA("Frame") and child.Name ~= "CustomSticker" then
-                    child.BackgroundTransparency = 1
-                    local sticker = Instance.new("ImageLabel")
-                    sticker.Name = "CustomSticker"
-                    sticker.Size = UDim2.new(1.8, 0, 1.8, 0)
-                    sticker.Position = UDim2.new(-0.4, 0, -0.4, 0)
-                    sticker.BackgroundTransparency = 1
-                    sticker.Image = "rbxassetid://1484081522"
-                    sticker.Parent = child
-                end
-            end)
-            
-        -- Si es un Botón estándar
-        elseif string.find(string.lower(obj.Name), "button") then
-            if obj:IsA("Frame") then
-                obj.BackgroundColor3 = colorAzulOscuro
-                obj.BackgroundTransparency = transparenciaAzul
-            end
+        -- Creamos tu Thumb personalizado (El sticker/botón redondo)
+        local customThumb = originalThumb:FindFirstChild("CustomThumb")
+        if not customThumb then
+            customThumb = Instance.new("ImageLabel")
+            customThumb.Name = "CustomThumb"
+            -- Lo hacemos un poco más grande para que sobresalga estéticamente (puedes ajustar esto)
+            customThumb.Size = UDim2.new(1.6, 0, 1.6, 0) 
+            customThumb.Position = UDim2.new(-0.3, 0, -0.3, 0) -- Centrado perfecto
+            customThumb.BackgroundTransparency = 1
+            customThumb.Image = "rbxassetid://1484081522" -- <--- ID de tu sticker personalizado
+            customThumb.ZIndex = originalThumb.ZIndex + 1 -- Asegura que esté por encima del track
+            customThumb.Parent = originalThumb
+        end
+    end
+end
+
+-- Hook para aplicar la personalización a todos los toggles existentes y nuevos
+local function iniciarEscuchaToggles(parent)
+    local function comprobarYAplicar(child)
+        if string.find(string.lower(child.Name), "toggle") then
+            personalizarToggle(child)
         end
     end
 
-    -- Escuchamos cuando se añaden nuevos elementos a la UI
-    if Topbar and Topbar.Parent then
-        Topbar.Parent.DescendantAdded:Connect(aplicarEstilo)
-        -- Aplicamos a lo que ya existe
-        for _, v in pairs(Topbar.Parent:GetDescendants()) do
-            aplicarEstilo(v)
-        end
+    -- Aplicar a los que ya existen en la UI
+    for _, descendant in ipairs(parent:GetDescendants()) do
+        comprobarYAplicar(descendant)
     end
-end)
--- [FIN] INYECCIÓN SEGURA
+
+    -- Escuchar nuevos toggles que se creen dinámicamente
+    parent.DescendantAdded:Connect(comprobarYAplicar)
+end
+
+-- Activamos el script apuntando a la UI de Rayfield (ajusta 'RayfieldUI' si tu screenGui se llama diferente)
+local RayfieldUI = game:GetService("CoreGui"):FindFirstChild("Rayfield") or game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("Rayfield")
+if RayfieldUI then
+    iniciarEscuchaToggles(RayfieldUI)
+end
+
+-- fin de thumb y track
 
 -- Thanks to Latte Softworks for the Lucide integration for Roblox
 local Icons = useStudio and require(script.Parent.icons) or loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua')
