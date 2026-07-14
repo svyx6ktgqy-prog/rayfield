@@ -1315,18 +1315,17 @@ LoadingFrame.Version.Text = Release
 --  DESCARGA E INYECCIÓN DE TUS ASSETS DESDE GITHUB (icon.png y trackX.png)
 -- =============================================================================
 
-local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
 local imageUrl_icon = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/icon.png"
 local fileName_icon = "rayfield_custom_ball.png"
 local customAssetId_icon = ""
 
--- [ACTUALIZADO] Apuntando al nuevo trackX.png
 local imageUrl_track = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/trackX.png"
 local fileName_track = "rayfield_custom_trackX.png"
 local customAssetId_track = ""
 
--- Función local para descargar y convertir archivos a Assets de Roblox de forma segura
+-- Función local para descargar y convertir archivos a Assets de Roblox
 local function descargarAsset(url, fileName, fallbackId)
     local assetId = ""
     local success, err = pcall(function()
@@ -1344,7 +1343,7 @@ local function descargarAsset(url, fileName, fallbackId)
     end)
     
     if not success or assetId == "" then
-        warn("[-] Error al descargar " .. fileName .. ". Usando fallback. Detalle: " .. tostring(err))
+        warn("[-] Error al descargar " .. fileName .. ". Detalle: " .. tostring(err))
         assetId = fallbackId
     end
     return assetId
@@ -1355,11 +1354,11 @@ customAssetId_icon = descargarAsset(imageUrl_icon, fileName_icon, "rbxassetid://
 customAssetId_track = descargarAsset(imageUrl_track, fileName_track, "rbxassetid://3570695787") 
 
 -- =============================================================================
---  FUNCIÓN LOCAL PARA ESTILIZAR UN SWITCH COMPLETO CON COLORES DINÁMICOS
+--  MOTOR DE ESTILOS Y COLORES (SINCRONIZADO POR FÍSICA)
 -- =============================================================================
 
-local colorEncendido = Color3.fromRGB(255, 255, 255) -- Colores originales
-local colorApagado = Color3.fromRGB(110, 110, 110)   -- Tono grisáceo/oscurecido
+local colorEncendido = Color3.fromRGB(255, 255, 255) -- Color real de tu PNG
+local colorApagado = Color3.fromRGB(110, 110, 110)   -- Gris oscurecido
 
 local function aplicarEstiloSwitch(toggleFrame, assetId_icon, assetId_track)
     local switchContainer = toggleFrame:FindFirstChild("Switch")
@@ -1372,13 +1371,8 @@ local function aplicarEstiloSwitch(toggleFrame, assetId_icon, assetId_track)
     local shadow = switchContainer:FindFirstChild("Shadow")
     if shadow then shadow.Visible = false end
 
-    -- Determinamos el estado inicial del toggle observando la posición de la bolita original de Rayfield
     local indicator = switchContainer:WaitForChild("Indicator", 5)
     if not indicator then return end
-    
-    -- En Rayfield, si el offset X de la posición es mayor a -30, significa que está en el lado derecho (Encendido)
-    local estadoInicial = indicator.Position.X.Offset > -30
-    local colorInicial = estadoInicial and colorEncendido or colorApagado
 
     -- 2. Inyectar tu trackX (fondo)
     local customTrack = switchContainer:FindFirstChild("CustomTrack")
@@ -1388,12 +1382,10 @@ local function aplicarEstiloSwitch(toggleFrame, assetId_icon, assetId_track)
         customTrack.Size = UDim2.new(1, 0, 1, 0)
         customTrack.BackgroundTransparency = 1
         customTrack.Image = assetId_track
-        customTrack.ImageColor3 = colorInicial -- Aplica el color gris o normal
         customTrack.ZIndex = switchContainer.ZIndex
         customTrack.Parent = switchContainer
     else
         customTrack.Image = assetId_track
-        customTrack.ImageColor3 = colorInicial
     end
 
     -- 3. Modificar el Indicator (La bolita deslizante)
@@ -1410,33 +1402,38 @@ local function aplicarEstiloSwitch(toggleFrame, assetId_icon, assetId_track)
         customThumb.Position = UDim2.new(-0.2, 0, -0.2, 0)
         customThumb.BackgroundTransparency = 1
         customThumb.Image = assetId_icon
-        customThumb.ImageColor3 = colorInicial -- Aplica el color gris o normal
         customThumb.ZIndex = indicator.ZIndex + 1
         customThumb.Parent = indicator
     else
         customThumb.Image = assetId_icon
-        customThumb.ImageColor3 = colorInicial
     end
 
-    -- 4. Motor Lógico de Color (Conectamos la animación a los clics)
-    if not indicator:GetAttribute("ColorHookActivado") then
-        indicator:SetAttribute("ColorHookActivado", true)
+    -- 4. NUEVO MOTOR LÓGICO DE COLOR (Lerp Fotograma a Fotograma)
+    if not indicator:GetAttribute("ColorSincronizado") then
+        indicator:SetAttribute("ColorSincronizado", true)
         
-        local ultimoEstado = estadoInicial
-        -- Escuchamos cuando la bolita cambie de posición
-        indicator:GetPropertyChangedSignal("Position"):Connect(function()
-            local estaEncendido = indicator.Position.X.Offset > -30
-            
-            -- Si el estado cambió, disparamos la animación de colores
-            if estaEncendido ~= ultimoEstado then
-                ultimoEstado = estaEncendido
-                local colorDestino = estaEncendido and colorEncendido or colorApagado
-                
-                -- Hacemos un Tween suave (0.4s) para que el color cambie fluidamente como la bolita
-                local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-                TweenService:Create(customTrack, tweenInfo, {ImageColor3 = colorDestino}):Play()
-                TweenService:Create(customThumb, tweenInfo, {ImageColor3 = colorDestino}):Play()
+        -- Ejecuta la validación de color constantemente ligada a los frames de Roblox
+        local hook
+        hook = RunService.Heartbeat:Connect(function()
+            -- Si el switch se borra de la pantalla, desconectamos el bucle para evitar lag
+            if not indicator or not indicator.Parent then
+                hook:Disconnect()
+                return
             end
+            
+            -- Rayfield usa el offset X -40 (Apagado) y -20 (Encendido)
+            local currentX = indicator.Position.X.Offset
+            local clampedX = math.clamp(currentX, -40, -20)
+            
+            -- Convierte esa posición en un porcentaje del 0 al 1 (0 = Apagado, 1 = Encendido)
+            local alpha = (clampedX - (-40)) / 20 
+            
+            -- Mezcla matemáticamente los colores según ese porcentaje
+            local colorDinamico = colorApagado:Lerp(colorEncendido, alpha)
+            
+            -- Aplica la transición en tiempo real
+            if customTrack then customTrack.ImageColor3 = colorDinamico end
+            if customThumb then customThumb.ImageColor3 = colorDinamico end
         end)
     end
 end
@@ -1469,7 +1466,7 @@ task.spawn(function()
     end
 
     if not RayfieldGui then return warn("[-] No se pudo encontrar la interfaz de Rayfield.") end
-    print("[+] Aplicando inyección avanzada con colores a trackX...")
+    print("[+] Aplicando motor físico de colores al switch...")
 
     -- 1. Modificar Plantilla
     local templateFolder = RayfieldGui.Main:FindFirstChild("Elements") and RayfieldGui.Main.Elements:FindFirstChild("Template")
@@ -1477,13 +1474,18 @@ task.spawn(function()
         aplicarEstiloSwitch(templateFolder.Toggle, customAssetId_icon, customAssetId_track)
     end
 
-    -- 2. Modificar Existentes y 3. Escuchar Nuevos
+    -- 2. Modificar Existentes
     local function esToggle(frame) return frame:IsA("Frame") and frame:FindFirstChild("Switch") end
     for _, desc in ipairs(RayfieldGui:GetDescendants()) do
         if esToggle(desc) then aplicarEstiloSwitch(desc, customAssetId_icon, customAssetId_track) end
     end
+    
+    -- 3. Escuchar Nuevos
     RayfieldGui.DescendantAdded:Connect(function(desc)
-        if esToggle(desc) then task.wait() aplicarEstiloSwitch(desc, customAssetId_icon, customAssetId_track) end
+        if esToggle(desc) then 
+            task.wait() 
+            aplicarEstiloSwitch(desc, customAssetId_icon, customAssetId_track) 
+        end
     end)
 end)
 
