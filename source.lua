@@ -978,9 +978,11 @@ local dragOffsetMobile = 150
 Rayfield.DisplayOrder = 100
 LoadingFrame.Version.Text = Release
 
-							-- [INICIO] INYECCIÓN DE FONDO ANIMADO (DESCARGA AUTOMÁTICA Y CROSSFADE)
+								-- [INICIO] INYECCIÓN DE FONDO ANIMADO TRASHER (SÚPER CONTROLADO)
 	task.spawn(function()
-		-- 1. ENLACES RAW Y NUEVA RUTA 'TRASHER'
+		print("Trasher Debug | Inicializando motor de fondo ultra-controlado...")
+		
+		-- 1. Enlaces RAW de GitHub y Rutas en Delta
 		local urlScene1 = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/Scene1.jpg" 
 		local urlScene2 = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/Scene2.jpg"
 		
@@ -991,39 +993,35 @@ LoadingFrame.Version.Text = Release
 		if type(getcustomasset) == "function" then
 			local requestFunc = request or http_request or (syn and syn.request)
 			
-			-- Asegurar que la carpeta 'trasher' exista
+			-- Asegurar que exista la carpeta 'trasher'
 			if type(makefolder) == "function" and type(isfolder) == "function" then
 				if not isfolder(folderPath) then
 					makefolder(folderPath)
 				end
 			end
 			
-			-- Función robusta para descargar (si no existe) y cargar la imagen
+			-- Descarga segura de imágenes
 			local function ensureAndLoadImage(url, path)
 				if type(isfile) == "function" and type(writefile) == "function" and requestFunc then
 					if not isfile(path) then
 						if url:match("^http") then
-							local req = requestFunc({Url = url, Method = "GET"})
-							if req and type(req) == "table" and req.Body then
+							local success, req = pcall(function()
+								return requestFunc({Url = url, Method = "GET"})
+							end)
+							if success and req and type(req) == "table" and req.Body then
 								writefile(path, req.Body)
-							else
-								warn("Rayfield | Falló la descarga de: " .. path)
 							end
-						else
-							warn("Rayfield | Enlace inválido para: " .. path)
 						end
 					end
 				end
-				
 				local success, asset = pcall(getcustomasset, path)
 				return success and asset or ""
 			end
 
-			-- Procesar ambas imágenes en la nueva carpeta
 			local asset1 = ensureAndLoadImage(urlScene1, pathImage1)
 			local asset2 = ensureAndLoadImage(urlScene2, pathImage2)
 			
-			-- 2. Empujamos los elementos de Rayfield hacia adelante (ZIndex)
+			-- 2. Empujar los elementos originales de Rayfield al frente
 			for _, obj in ipairs(Main:GetDescendants()) do
 				if obj:IsA("GuiObject") then
 					obj.ZIndex = obj.ZIndex + 10
@@ -1033,7 +1031,7 @@ LoadingFrame.Version.Text = Release
 			local mainCorner = Main:FindFirstChildOfClass("UICorner")
 			local exactRadius = mainCorner and mainCorner.CornerRadius or UDim2.new(0, 8)
 			
-			-- 3. Contenedor Maestro de las imágenes
+			-- 3. Contenedor Maestro
 			local bgContainer = Instance.new("Frame")
 			bgContainer.Name = "CustomAnimatedBackground"
 			bgContainer.Parent = Main
@@ -1045,7 +1043,7 @@ LoadingFrame.Version.Text = Release
 			cornerContainer.CornerRadius = exactRadius
 			cornerContainer.Parent = bgContainer
 			
-			-- 4. Construcción de Imagen 1 (Base)
+			-- 4. Imagen 1 (Base)
 			local bgImage1 = Instance.new("ImageLabel")
 			bgImage1.Parent = bgContainer
 			bgImage1.Size = UDim2.new(1, 0, 1, 0)
@@ -1053,12 +1051,13 @@ LoadingFrame.Version.Text = Release
 			bgImage1.ScaleType = Enum.ScaleType.Crop
 			bgImage1.ClipsDescendants = true
 			bgImage1.Image = asset1
+			bgImage1.ZIndex = 1
 			
 			local corner1 = Instance.new("UICorner")
 			corner1.CornerRadius = exactRadius
 			corner1.Parent = bgImage1
 			
-			-- 5. Construcción de Imagen 2 (Capa animada superior)
+			-- 5. Imagen 2 (Superior)
 			local bgImage2 = Instance.new("ImageLabel")
 			bgImage2.Parent = bgContainer
 			bgImage2.Size = UDim2.new(1, 0, 1, 0)
@@ -1066,57 +1065,53 @@ LoadingFrame.Version.Text = Release
 			bgImage2.ScaleType = Enum.ScaleType.Crop
 			bgImage2.ClipsDescendants = true
 			bgImage2.Image = asset2
-			bgImage2.ImageTransparency = 1 
+			bgImage2.ImageTransparency = 1 -- Empieza oculta
+			bgImage2.ZIndex = 2
 			
 			local corner2 = Instance.new("UICorner")
 			corner2.CornerRadius = exactRadius
 			corner2.Parent = bgImage2
 			
-			-- 6. Tinte oscuro para mejorar la legibilidad del texto
+			-- 6. Filtro oscuro de legibilidad (Mejora el contraste del texto de Rayfield)
 			local darkTint = Instance.new("Frame")
 			darkTint.Name = "DarkOverlay"
 			darkTint.Parent = bgContainer
 			darkTint.Size = UDim2.new(1, 0, 1, 0)
 			darkTint.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-			darkTint.BackgroundTransparency = 0.1 
-			darkTint.ZIndex = 2 
+			darkTint.BackgroundTransparency = 0.45 -- Ajusta esto si quieres que se vea más o menos oscuro
+			darkTint.ZIndex = 3 -- Por encima de las imágenes, por debajo de la interfaz
 			darkTint.BorderSizePixel = 0
 			
 			local tintCorner = Instance.new("UICorner")
 			tintCorner.CornerRadius = exactRadius
 			tintCorner.Parent = darkTint
 			
-			-- 7. Lógica de Sincronización de Opacidad (Sensible al Minimizar de Rayfield)
-			local fadeFactor = 0 
+			-- 7. Motor de Animación Matemático por Ciclo de Renderizado
+			-- "speed" controla la velocidad. Un valor de 1.2 hace que cambie suavemente cada 3-4 segundos.
+			local speed = 1.2 
+			local RunService = game:GetService("RunService")
 			
-			local function syncAnimations()
-				local baseTrans = Main.BackgroundTransparency
-				bgImage1.ImageTransparency = baseTrans + (1 - baseTrans) * fadeFactor
-				bgImage2.ImageTransparency = baseTrans + (1 - baseTrans) * (1 - fadeFactor)
-				darkTint.BackgroundTransparency = 0.35 + (baseTrans * 0.65)
-			end
-			syncAnimations()
-			Main:GetPropertyChangedSignal("BackgroundTransparency"):Connect(syncAnimations)
-			
-			-- 8. El motor del bucle (Sin TweenService, evitando GC y bugs de parentesco)
-			local duration = 3 -- Duración de la transición en segundos
-			local elapsed = 0
-			
-			task.spawn(function()
-				while bgContainer and bgContainer.Parent do
-					local deltaTime = task.wait()
-					elapsed = elapsed + deltaTime
-					
-					-- Usamos una onda cosenoidal para oscilar suavemente el fadeFactor entre 0 y 1.
-					-- Un ciclo completo (ida y vuelta) tardará exactamente (duration * 2) segundos.
-					fadeFactor = (math.cos((elapsed * math.pi) / duration) + 1) / 2
-					
-					syncAnimations()
-				end
+			RunService.Heartbeat:Connect(function()
+				-- Si por alguna razón borras la UI o se cierra, apagamos el bucle para no causar lag
+				if not bgContainer or not bgContainer.Parent then return end
+				
+				-- Si el menú principal está oculto, pausamos el renderizado para ahorrar batería en móviles
+				if not Main.Visible then return end
+				
+				-- Genera un factor oscilante perfecto de 0 a 1 basado en el tiempo del juego
+				local fadeFactor = (math.cos(tick() * speed) + 1) / 2
+				
+				-- Aplicamos las transparencias directamente de forma cruzada
+				bgImage1.ImageTransparency = fadeFactor
+				bgImage2.ImageTransparency = 1 - fadeFactor
 			end)
+			
+			print("Trasher Debug | ¡Motor de transición activado de forma segura!")
+		else
+			warn("Trasher Debug | Tu ejecutor no es compatible con 'getcustomasset'.")
 		end
 	end)
-	-- [FIN] INYECCIÓN DE FONDO ANIMADO (DESCARGA AUTOMÁTICA Y CROSSFADE)
+	-- [FIN] INYECCIÓN DE FONDO ANIMADO TRASHER (SÚPER CONTROLADO)
 
 					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (V7 - SOLO TRASLUCIDEZ Y TOPBAR BLANCO)
 	task.spawn(function()
