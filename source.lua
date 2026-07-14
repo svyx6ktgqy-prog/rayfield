@@ -1088,7 +1088,7 @@ LoadingFrame.Version.Text = Release
 			
 			-- 7. Motor de Animación Matemático por Ciclo de Renderizado
 			-- "speed" controla la velocidad. Un valor de 1.2 hace que cambie suavemente cada 3-4 segundos.
-			local speed = 1.2 
+			local speed = 4.5 
 			local RunService = game:GetService("RunService")
 			
 			RunService.Heartbeat:Connect(function()
