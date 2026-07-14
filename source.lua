@@ -1319,7 +1319,7 @@ local imageUrl_icon = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfiel
 local fileName_icon = "rayfield_custom_ball.png"
 local customAssetId_icon = ""
 
-local imageUrl_track = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/trackX.png"
+local imageUrl_track = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/track.png"
 local fileName_track = "rayfield_custom_track.png"
 local customAssetId_track = ""
 
@@ -1388,7 +1388,7 @@ local function aplicarEstiloSwitch(toggleFrame, assetId_icon, assetId_track)
 
     -- 3. Modificar el Indicator (La bolita deslizante)
     local indicator = switchContainer:FindFirstChild("Indicator")
-    local customThumb = nil
+    local customThumb = nil 
     
     if indicator then
         -- Volvemos invisible la bolita original de Rayfield
@@ -1418,30 +1418,37 @@ local function aplicarEstiloSwitch(toggleFrame, assetId_icon, assetId_track)
         end
     end
 
-    -- 4. Sincronización de color corregida (Activo / Apagado Gris)
+    -- =========================================================================
+    -- 4. SINCRONIZACIÓN DE COLOR (CON CANDADO ANTI-SPAM)
+    -- =========================================================================
     if indicator and customTrack and customThumb then
-        local colorActivo = Color3.fromRGB(255, 255, 255)  -- Color original sin filtros
-        local colorApagado = Color3.fromRGB(120, 120, 120) -- Gris apagado
+        local colorActivo = Color3.fromRGB(255, 255, 255)  -- Color original
+        local colorApagado = Color3.fromRGB(110, 110, 110) -- Gris apagado oscuro
         
-        -- Duración y suavizado de la animación de color
         local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        
+        -- Candado para evitar que el Tween se congele por ejecutarse múltiples veces
+        local estadoActual = nil 
 
         local function sincronizarColor()
-            -- ON: Offset es -20 | OFF: Offset es -40. 
-            -- Al comparar si es mayor a -30, determinamos perfectamente si está activo.
-            local estaEncendido = indicator.Position.X.Offset > -30
-            local colorObjetivo = estaEncendido and colorActivo or colorApagado
+            local sX = indicator.Position.X.Scale
+            local oX = indicator.Position.X.Offset
+            
+            -- Fórmula universal para saber si está encendido sin importar cómo lo mueva Rayfield
+            local estaEncendido = (sX > 0.4) or (sX == 0 and oX > 10) or (sX == 1 and oX > -30)
 
-            -- Transición de color suave para track y la bola
+            -- Si el estado es el mismo que el anterior, NO hacemos nada (rompemos el ciclo de spam)
+            if estadoActual == estaEncendido then return end
+            estadoActual = estaEncendido -- Actualizamos el candado
+
+            -- Animamos de forma limpia
+            local colorObjetivo = estaEncendido and colorActivo or colorApagado
             TweenService:Create(customTrack, tweenInfo, {ImageColor3 = colorObjetivo}):Play()
             TweenService:Create(customThumb, tweenInfo, {ImageColor3 = colorObjetivo}):Play()
         end
 
-        -- Escucha pasiva cuando Rayfield cambia la posición de su indicador
         indicator:GetPropertyChangedSignal("Position"):Connect(sincronizarColor)
-
-        -- Ejecución inicial para fijar el color correcto desde el inicio
-        sincronizarColor()
+        sincronizarColor() -- Ejecutar una vez al inicio
     end
 end
 
