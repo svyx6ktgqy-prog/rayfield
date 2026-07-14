@@ -978,33 +978,22 @@ local dragOffsetMobile = 150
 Rayfield.DisplayOrder = 100
 LoadingFrame.Version.Text = Release
 
-				-- [INICIO] INYECCIÓN DE FONDO ANIMADO (CROSSFADE)
+					-- [INICIO] INYECCIÓN DE FONDO ANIMADO (LOCAL CROSSFADE)
 	task.spawn(function()
-		-- 1. ENLACES DE LAS DOS IMÁGENES (Reemplaza con tus URLs RAW)
-		local bgImageUrl1 = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/bgHD.jpeg" 
-		local bgImageUrl2 = "ENLACE_DE_TU_SEGUNDA_IMAGEN_AQUI.jpeg" 
+		-- 1. Rutas locales de tus imágenes (asegúrate de que los nombres y mayúsculas coincidan exactamente)
+		local pathImage1 = "assets/Scene1.jpg"
+		local pathImage2 = "assets/Scene2.jpg"
 		
-		local bgImageName1 = "BgHD_Anim1.jpeg"
-		local bgImageName2 = "BgHD_Anim2.jpeg"
-		
-		if type(writefile) == "function" and type(getcustomasset) == "function" then
-			local requestFunc = request or http_request or (syn and syn.request)
+		if type(getcustomasset) == "function" then
 			
-			-- Función para descargar o cargar desde la caché local de exploit
-			local function ensureImage(url, name)
-				if not isfile(name) and requestFunc then
-					local req = requestFunc({Url = url, Method = "GET"})
-					if req and type(req) == "table" and req.Body then
-						writefile(name, req.Body)
-					end
-				end
-				local success, asset = pcall(getcustomasset, name)
-				return success and asset or ""
-			end
-
-			-- Carga ambas imágenes
-			local asset1 = ensureImage(bgImageUrl1, bgImageName1)
-			local asset2 = ensureImage(bgImageUrl2, bgImageName2)
+			-- Carga ambas imágenes desde la carpeta de tu ejecutor
+			local asset1, asset2 = "", ""
+			
+			local success1, result1 = pcall(getcustomasset, pathImage1)
+			if success1 then asset1 = result1 else warn("Rayfield | No se encontró: " .. pathImage1) end
+			
+			local success2, result2 = pcall(getcustomasset, pathImage2)
+			if success2 then asset2 = result2 else warn("Rayfield | No se encontró: " .. pathImage2) end
 			
 			-- 2. Empujamos los elementos de Rayfield hacia adelante (ZIndex)
 			for _, obj in ipairs(Main:GetDescendants()) do
@@ -1075,11 +1064,11 @@ LoadingFrame.Version.Text = Release
 			local function syncAnimations()
 				local baseTrans = Main.BackgroundTransparency
 				
-				-- Se calcula la opacidad tomando en cuenta si el usuario oculta/muestra el menú de Rayfield
+				-- Calcula la opacidad tomando en cuenta si el usuario oculta/muestra la UI
 				bgImage1.ImageTransparency = baseTrans + (1 - baseTrans) * fadeFactor
 				bgImage2.ImageTransparency = baseTrans + (1 - baseTrans) * (1 - fadeFactor)
 				
-				-- El tinte oscuro
+				-- El tinte oscuro se adapta a la transparencia de la ventana principal
 				darkTint.BackgroundTransparency = 0.35 + (baseTrans * 0.65)
 			end
 			syncAnimations()
@@ -1095,14 +1084,13 @@ LoadingFrame.Version.Text = Release
 				syncAnimations()
 			end)
 			
-			-- Parámetros del Tween: 3 segundos, suave (Sine), In/Out, bucle infinito (-1), regresa automático (true)
-			-- El '1' del final significa que esperará 1 segundo exacto en su punto máximo antes de volver a la primera imagen
+			-- TweenInfo: 3 segundos, suave (Sine), InOut, infinito (-1), regresa (true), delay de 1s al tope (1)
 			local tweenInfo = TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true, 1)
 			local tween = TweenService:Create(faderValue, tweenInfo, {Value = 1})
 			tween:Play()
 		end
 	end)
-	-- [FIN] INYECCIÓN DE FONDO ANIMADO (CROSSFADE)
+	-- [FIN] INYECCIÓN DE FONDO ANIMADO (LOCAL CROSSFADE)
 
 					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (V7 - SOLO TRASLUCIDEZ Y TOPBAR BLANCO)
 	task.spawn(function()
