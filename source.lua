@@ -1312,145 +1312,168 @@ LoadingFrame.Version.Text = Release
 	-- [FIN] INYECCIÓN BLINDADA COMPLETA (V7)
 
 -- =============================================================================
---  DESCARGA E INYECCIÓN AUTOMÁTICA DE TU ICONO DESDE GITHUB
+--  DESCARGA E INYECCIÓN DE TU BOLITA DESDE GITHUB (icon.png)
 -- =============================================================================
 
 local imageUrl = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/icon.png"
-local fileName = "rayfield_custom_icon.png"
+local fileName = "rayfield_custom_ball.png"
 local customAssetId = ""
 
--- Descargamos el PNG de forma segura y lo convertimos en un asset de Roblox
+-- Descargamos el PNG y lo convertimos a un Asset que Roblox entienda
 local success, err = pcall(function()
-    -- Si el archivo no existe en la carpeta del ejecutor, lo descarga
     if not isfile(fileName) then
         writefile(fileName, game:HttpGet(imageUrl))
     end
     
-    -- Convierte el archivo local de tu PC a un ID que Roblox UI entienda
     if getcustomasset then
         customAssetId = getcustomasset(fileName)
     elseif getsynasset then
         customAssetId = getsynasset(fileName)
     else
-        error("Tu ejecutor no soporta 'getcustomasset' ni 'getsynasset'")
+        customAssetId = "rbxassetid://1484081522" -- Fallback de seguridad
     end
 end)
 
-if not success then
-    warn("[-] Error al descargar o procesar la imagen de GitHub: " .. tostring(err))
-    -- Si falla, usa este ID de repuesto de Roblox por defecto para no romper el script
-    customAssetId = "rbxassetid://1484081522" 
-else
-    print("[+] Imagen de GitHub cargada con éxito para el Switch!")
+if not success or customAssetId == "" then
+    warn("[-] Error al descargar de GitHub. Usando fallback. Detalle: " .. tostring(err))
+    customAssetId = "rbxassetid://1484081522"
 end
 
-
 -- =============================================================================
---  APLICACIÓN DEL CUSTOM ASSET AL SWITCH DE RAYFIELD
+--  FUNCIÓN LOCAL PARA ESTILIZAR UN SWITCH
 -- =============================================================================
 
-local function personalizarToggle(toggleObj)
-    -- 1. Buscamos el contenedor 'Switch' (el track)
-    local switchContainer = toggleObj:WaitForChild("Switch", 5)
+local function aplicarEstiloSwitch(toggleFrame, assetId)
+    local switchContainer = toggleFrame:FindFirstChild("Switch")
     if not switchContainer then return end
 
-    -- -------------------------------------------------------------------------
-    -- PERSONALIZACIÓN DEL TRACK (Fondo del switch)
-    -- -------------------------------------------------------------------------
-    -- Hacemos invisible el fondo original
+    -- 1. Ocultar el fondo y bordes originales de Rayfield
     switchContainer.BackgroundTransparency = 1
     
-    -- Desactivamos el borde (UIStroke) original de Rayfield para que no se superponga
     local switchStroke = switchContainer:FindFirstChildOfClass("UIStroke")
-    if switchStroke then
-        switchStroke.Enabled = false
-    end
+    if switchStroke then switchStroke.Enabled = false end
     
-    -- Ocultamos la sombra original de Rayfield si existe
     local shadow = switchContainer:FindFirstChild("Shadow")
-    if shadow then
-        shadow.Visible = false
-    end
+    if shadow then shadow.Visible = false end
 
-    -- Creamos tu Track personalizado (Fondo)
+    -- Crear un fondo personalizado limpio si quieres (opcional)
     local customTrack = switchContainer:FindFirstChild("CustomTrack")
     if not customTrack then
         customTrack = Instance.new("ImageLabel")
         customTrack.Name = "CustomTrack"
-        customTrack.Size = UDim2.new(1, 0, 1, 0) -- Rellena todo el switch
+        customTrack.Size = UDim2.new(1, 0, 1, 0)
         customTrack.BackgroundTransparency = 1
-        -- NOTA: Aquí puedes poner el ID de tu track de fondo si tienes uno. 
-        -- De momento lo dejamos vacío para que el fondo sea transparente o puedes asignarle otra imagen.
-        customTrack.Image = "" 
+        customTrack.Image = "" -- Puedes poner un ID de track aquí si gustas
         customTrack.ZIndex = switchContainer.ZIndex
         customTrack.Parent = switchContainer
     end
 
-    -- -------------------------------------------------------------------------
-    -- PERSONALIZACIÓN DEL THUMB (La bolita de GitHub que proporcionaste)
-    -- -------------------------------------------------------------------------
-    -- En Rayfield, el botón deslizante redondo se llama "Indicator"
-    local indicator = switchContainer:WaitForChild("Indicator", 5)
+    -- 2. Modificar el Indicator (La bolita deslizante)
+    local indicator = switchContainer:FindFirstChild("Indicator")
     if indicator then
-        -- Hacemos invisible el círculo gris/azul original de Rayfield
+        -- Volvemos invisible la bolita gris/azul original de Rayfield
         indicator.BackgroundTransparency = 1
         
-        -- Desactivamos el borde original del Indicator
         local indicatorStroke = indicator:FindFirstChildOfClass("UIStroke")
-        if indicatorStroke then
-            indicatorStroke.Enabled = false
-        end
-        
-        -- Creamos tu Thumb personalizado (Tu nueva bolita descargada de GitHub)
+        if indicatorStroke then indicatorStroke.Enabled = false end
+
+        -- Inyectamos tu bolita PNG descargada de GitHub
         local customThumb = indicator:FindFirstChild("CustomThumb")
         if not customThumb then
             customThumb = Instance.new("ImageLabel")
             customThumb.Name = "CustomThumb"
-            -- Ajustamos el tamaño a 1.5 para que la bolita/icono resalte bien
-            customThumb.Size = UDim2.new(1.5, 0, 1.5, 0) 
-            customThumb.Position = UDim2.new(-0.25, 0, -0.25, 0) -- Centrado perfecto
+            -- Hacemos que sea un 40% más grande para que tu PNG resalte y se vea espectacular
+            customThumb.Size = UDim2.new(1.4, 0, 1.4, 0)
+            customThumb.Position = UDim2.new(-0.2, 0, -0.2, 0) -- Centrado perfecto
             customThumb.BackgroundTransparency = 1
-            customThumb.Image = customAssetId -- <--- AQUÍ SE USA TU ARCHIVO DE GITHUB
-            customThumb.ZIndex = indicator.ZIndex + 1 -- Dibuja por encima de la base
+            customThumb.Image = assetId
+            customThumb.ZIndex = indicator.ZIndex + 1
             customThumb.Parent = indicator
         else
-            -- Si ya existía, simplemente actualizamos la imagen por si acaso
-            customThumb.Image = customAssetId
+            customThumb.Image = assetId
         end
     end
 end
 
--- Hook para escuchar todos los toggles existentes y los nuevos
-local function iniciarEscuchaToggles(parent)
-    local function comprobarYAplicar(child)
-        -- Si posee el "Switch", es un Toggle de Rayfield
-        if child:IsA("Frame") and child:FindFirstChild("Switch") then
-            personalizarToggle(child)
+-- =============================================================================
+--  BÚSQUEDA ROBUSTA DE LA INTERFAZ DE RAYFIELD
+-- =============================================================================
+
+local function findRayfieldGui()
+    -- Buscamos en gethui() (ejecutores modernos), CoreGui y PlayerGui
+    local targets = {
+        gethui and gethui(),
+        game:GetService("CoreGui"),
+        game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui", 5)
+    }
+
+    for _, root in ipairs(targets) do
+        if root then
+            -- Rayfield puede tener nombres aleatorios, lo buscamos por estructura
+            for _, child in ipairs(root:GetChildren()) do
+                if child:IsA("ScreenGui") then
+                    local main = child:FindFirstChild("Main")
+                    if main and main:FindFirstChild("Elements") then
+                        return child
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
+
+-- =============================================================================
+--  APLICACIÓN DEL ESTILO
+-- =============================================================================
+
+task.spawn(function()
+    local RayfieldGui = nil
+    -- Esperamos un máximo de 10 segundos a que Rayfield cargue en pantalla
+    for i = 1, 100 do
+        RayfieldGui = findRayfieldGui()
+        if RayfieldGui then break end
+        task.wait(0.1)
+    end
+
+    if not RayfieldGui then
+        warn("[-] No se pudo encontrar la interfaz de Rayfield en ningún contenedor.")
+        return
+    end
+
+    print("[+] ¡Interfaz de Rayfield detectada con éxito!")
+
+    -- 1. MODIFICAR LA PLANTILLA (Cualquier Toggle nuevo se creará ya con tu imagen)
+    local templateFolder = RayfieldGui.Main:FindFirstChild("Elements") 
+        and RayfieldGui.Main.Elements:FindFirstChild("Template")
+    
+    if templateFolder then
+        local toggleTemplate = templateFolder:FindFirstChild("Toggle")
+        if toggleTemplate then
+            aplicarEstiloSwitch(toggleTemplate, customAssetId)
+            print("[+] Plantilla original de Toggle modificada exitosamente.")
         end
     end
 
-    -- Escanear la interfaz actual por si ya hay toggles creados
-    for _, descendant in ipairs(parent:GetDescendants()) do
-        comprobarYAplicar(descendant)
+    -- 2. MODIFICAR TOGGLES EXISTENTES (Por si ya habías creado pestañas)
+    local function esToggle(frame)
+        return frame:IsA("Frame") and frame:FindFirstChild("Switch")
     end
 
-    -- Escuchar dinámicamente si se agregan nuevos elementos/pestañas
-    parent.DescendantAdded:Connect(comprobarYAplicar)
-end
+    for _, desc in ipairs(RayfieldGui:GetDescendants()) do
+        if esToggle(desc) then
+            aplicarEstiloSwitch(desc, customAssetId)
+        end
+    end
 
--- Esperamos a que la interfaz de Rayfield se cargue en el juego
-local RayfieldUI = nil
-for i = 1, 100 do
-    RayfieldUI = game:GetService("CoreGui"):FindFirstChild("Rayfield") or game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("Rayfield")
-    if RayfieldUI then break end
-    task.wait(0.1)
-end
-
-if RayfieldUI then
-    iniciarEscuchaToggles(RayfieldUI)
-else
-    warn("No se encontró la interfaz de Rayfield para aplicar el estilo.")
-end
+    -- 3. ESCUCHAR CREACIÓN DE NUEVOS ELEMENTOS (Doble capa de seguridad)
+    RayfieldGui.DescendantAdded:Connect(function(desc)
+        if esToggle(desc) then
+            task.wait() -- Esperamos un frame de Roblox a que termine de clonarse
+            aplicarEstiloSwitch(desc, customAssetId)
+        end
+    end)
+end)
 
 -- fin de thumb y track
 
