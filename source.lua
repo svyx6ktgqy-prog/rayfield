@@ -1319,7 +1319,7 @@ local imageUrl_icon = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfiel
 local fileName_icon = "rayfield_custom_ball.png"
 local customAssetId_icon = ""
 
-local imageUrl_track = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/trackX.png"
+local imageUrl_track = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/track.png"
 local fileName_track = "rayfield_custom_track.png"
 local customAssetId_track = ""
 
@@ -1347,30 +1347,32 @@ local function descargarAsset(url, fileName, fallbackId)
     return assetId
 end
 
--- Descargamos ambos componentes de tu interfaz
-customAssetId_icon = descargarAsset(imageUrl_icon, fileName_icon, "rbxassetid://1484081522")  -- Fallback de la bolita
-customAssetId_track = descargarAsset(imageUrl_track, fileName_track, "rbxassetid://3570695787") -- Fallback de un switch track genérico
+customAssetId_icon = descargarAsset(imageUrl_icon, fileName_icon, "rbxassetid://1484081522") 
+customAssetId_track = descargarAsset(imageUrl_track, fileName_track, "rbxassetid://3570695787") 
 
 -- =============================================================================
---  FUNCIÓN LOCAL PARA ESTILIZAR UN SWITCH COMPLETO
+--  FUNCIÓN LOCAL PARA ESTILIZAR UN SWITCH COMPLETO (MÉTODO 100% INFALIBLE)
 -- =============================================================================
 
 local TweenService = game:GetService("TweenService")
+local switchesRegistrados = {} -- Memoria para evitar duplicar procesos en un mismo Toggle
 
 local function aplicarEstiloSwitch(toggleFrame, assetId_icon, assetId_track)
+    -- Evitamos inyectar la animación dos veces en el mismo Toggle exacto
+    if switchesRegistrados[toggleFrame] then return end
+    switchesRegistrados[toggleFrame] = true
+
     local switchContainer = toggleFrame:FindFirstChild("Switch")
     if not switchContainer then return end
 
-    -- 1. Ocultar el fondo y bordes originales de Rayfield
+    -- 1. Limpieza de Rayfield
     switchContainer.BackgroundTransparency = 1
-    
     local switchStroke = switchContainer:FindFirstChildOfClass("UIStroke")
     if switchStroke then switchStroke.Enabled = false end
-    
     local shadow = switchContainer:FindFirstChild("Shadow")
     if shadow then shadow.Visible = false end
 
-    -- 2. Inyectar tu track (fondo) personalizado de GitHub
+    -- 2. Track Custom
     local customTrack = switchContainer:FindFirstChild("CustomTrack")
     if not customTrack then
         customTrack = Instance.new("ImageLabel")
@@ -1378,77 +1380,72 @@ local function aplicarEstiloSwitch(toggleFrame, assetId_icon, assetId_track)
         customTrack.Size = UDim2.new(1, 0, 1, 0)
         customTrack.BackgroundTransparency = 1
         customTrack.Image = assetId_track
-        -- Nos aseguramos de que el track se dibuje en la base del Switch
         customTrack.ZIndex = switchContainer.ZIndex
         customTrack.Parent = switchContainer
     else
         customTrack.Image = assetId_track
-        customTrack.ZIndex = switchContainer.ZIndex
     end
 
-    -- 3. Modificar el Indicator (La bolita deslizante)
+    -- 3. Thumb Custom (Bolita)
     local indicator = switchContainer:FindFirstChild("Indicator")
-    local customThumb = nil 
+    local customThumb = nil
     
     if indicator then
-        -- Volvemos invisible la bolita original de Rayfield
         indicator.BackgroundTransparency = 1
-        
         local indicatorStroke = indicator:FindFirstChildOfClass("UIStroke")
         if indicatorStroke then indicatorStroke.Enabled = false end
-
-        -- Forzamos que la bolita esté por encima de tu customTrack
         indicator.ZIndex = customTrack.ZIndex + 1
 
-        -- Inyectamos tu bolita PNG descargada de GitHub
         customThumb = indicator:FindFirstChild("CustomThumb")
         if not customThumb then
             customThumb = Instance.new("ImageLabel")
             customThumb.Name = "CustomThumb"
-            -- Ajuste de tamaño para que resalte y se vea espectacular
             customThumb.Size = UDim2.new(1.4, 0, 1.4, 0)
-            customThumb.Position = UDim2.new(-0.2, 0, -0.2, 0) -- Centrado perfecto
+            customThumb.Position = UDim2.new(-0.2, 0, -0.2, 0)
             customThumb.BackgroundTransparency = 1
             customThumb.Image = assetId_icon
             customThumb.ZIndex = indicator.ZIndex + 1
             customThumb.Parent = indicator
         else
             customThumb.Image = assetId_icon
-            customThumb.ZIndex = indicator.ZIndex + 1
         end
     end
 
     -- =========================================================================
-    -- 4. SINCRONIZACIÓN DE COLOR (CON CANDADO ANTI-SPAM)
+    -- 4. BUCLE LIGERO DE COLOR (FUERZA BRUTA LIMPIA SIN EVENTOS PERDIDOS)
     -- =========================================================================
     if indicator and customTrack and customThumb then
-        local colorActivo = Color3.fromRGB(255, 255, 255)  -- Color original
-        local colorApagado = Color3.fromRGB(110, 110, 110) -- Gris apagado oscuro
-        
-        local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        
-        -- Candado para evitar que el Tween se congele por ejecutarse múltiples veces
-        local estadoActual = nil 
-
-        local function sincronizarColor()
-            local sX = indicator.Position.X.Scale
-            local oX = indicator.Position.X.Offset
+        task.spawn(function()
+            local colorActivo = Color3.fromRGB(255, 255, 255)  -- Original
+            local colorApagado = Color3.fromRGB(110, 110, 110) -- Gris apagado oscuro
+            local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
             
-            -- Fórmula universal para saber si está encendido sin importar cómo lo mueva Rayfield
-            local estaEncendido = (sX > 0.4) or (sX == 0 and oX > 10) or (sX == 1 and oX > -30)
+            local estadoAnterior = nil
 
-            -- Si el estado es el mismo que el anterior, NO hacemos nada (rompemos el ciclo de spam)
-            if estadoActual == estaEncendido then return end
-            estadoActual = estaEncendido -- Actualizamos el candado
+            -- Un bucle que funciona para siempre mientras el Toggle exista, revisa cada 0.05s
+            while task.wait(0.05) do
+                if not indicator or not indicator.Parent then break end
 
-            -- Animamos de forma limpia
-            local colorObjetivo = estaEncendido and colorActivo or colorApagado
-            TweenService:Create(customTrack, tweenInfo, {ImageColor3 = colorObjetivo}):Play()
-            TweenService:Create(customThumb, tweenInfo, {ImageColor3 = colorObjetivo}):Play()
-        end
+                local pos = indicator.Position.X
+                -- Condición matemática robusta: Si se mueve un poco a la derecha, está encendido
+                local estaEncendido = (pos.Scale > 0.2) or (pos.Offset > 10)
 
-        indicator:GetPropertyChangedSignal("Position"):Connect(sincronizarColor)
-        sincronizarColor() -- Ejecutar una vez al inicio
+                if estaEncendido ~= estadoAnterior then
+                    if estadoAnterior == nil then
+                        -- [!] PRIMERA CARGA: Aplica el color gris de golpe SIN animación.
+                        -- Así te aseguras de que el menú aparezca con todo apagado al instante.
+                        customTrack.ImageColor3 = estaEncendido and colorActivo or colorApagado
+                        customThumb.ImageColor3 = estaEncendido and colorActivo or colorApagado
+                    else
+                        -- [!] CAMBIOS DEL JUGADOR: Si da clic, se aplica la animación de color suave.
+                        local colorObjetivo = estaEncendido and colorActivo or colorApagado
+                        TweenService:Create(customTrack, tweenInfo, {ImageColor3 = colorObjetivo}):Play()
+                        TweenService:Create(customThumb, tweenInfo, {ImageColor3 = colorObjetivo}):Play()
+                    end
+                    estadoAnterior = estaEncendido
+                end
+            end
+        end)
     end
 end
 
@@ -1484,7 +1481,6 @@ end
 
 task.spawn(function()
     local RayfieldGui = nil
-    -- Esperamos un máximo de 10 segundos a que Rayfield cargue
     for i = 1, 100 do
         RayfieldGui = findRayfieldGui()
         if RayfieldGui then break end
@@ -1498,7 +1494,7 @@ task.spawn(function()
 
     print("[+] ¡Interfaz de Rayfield detectada con éxito!")
 
-    -- 1. MODIFICAR LA PLANTILLA (Cualquier Toggle nuevo nacerá con tus imágenes y track)
+    -- 1. MODIFICAR LA PLANTILLA
     local templateFolder = RayfieldGui.Main:FindFirstChild("Elements") 
         and RayfieldGui.Main.Elements:FindFirstChild("Template")
     
@@ -1506,25 +1502,24 @@ task.spawn(function()
         local toggleTemplate = templateFolder:FindFirstChild("Toggle")
         if toggleTemplate then
             aplicarEstiloSwitch(toggleTemplate, customAssetId_icon, customAssetId_track)
-            print("[+] Plantilla original de Toggle (Fondo + Bola) modificada exitosamente.")
         end
     end
 
-    -- 2. MODIFICAR TOGGLES EXISTENTES (Por si ya habías creado pestañas)
     local function esToggle(frame)
         return frame:IsA("Frame") and frame:FindFirstChild("Switch")
     end
 
+    -- 2. MODIFICAR TOGGLES QUE YA FUERON CREADOS
     for _, desc in ipairs(RayfieldGui:GetDescendants()) do
         if esToggle(desc) then
             aplicarEstiloSwitch(desc, customAssetId_icon, customAssetId_track)
         end
     end
 
-    -- 3. ESCUCHAR CREACIÓN DE NUEVOS ELEMENTOS (Doble capa de seguridad)
+    -- 3. INTERCEPTAR TODOS LOS NUEVOS TOGGLES (¡CLONARÁN PERFECTAMENTE!)
     RayfieldGui.DescendantAdded:Connect(function(desc)
         if esToggle(desc) then
-            task.wait() -- Esperamos un frame de Roblox a que termine de clonarse
+            task.wait()
             aplicarEstiloSwitch(desc, customAssetId_icon, customAssetId_track)
         end
     end)
