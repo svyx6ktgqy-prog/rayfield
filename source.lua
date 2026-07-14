@@ -978,31 +978,30 @@ local dragOffsetMobile = 150
 Rayfield.DisplayOrder = 100
 LoadingFrame.Version.Text = Release
 
-						-- [INICIO] INYECCIÓN DE FONDO ANIMADO (DESCARGA AUTOMÁTICA Y CROSSFADE)
+							-- [INICIO] INYECCIÓN DE FONDO ANIMADO (DESCARGA AUTOMÁTICA Y CROSSFADE)
 	task.spawn(function()
-		-- 1. ENLACES RAW DE TUS IMÁGENES
+		-- 1. ENLACES RAW Y NUEVA RUTA 'TRASHER'
 		local urlScene1 = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/Scene1.jpg" 
 		local urlScene2 = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/Scene2.jpg"
 		
-		local folderPath = "assets"
+		local folderPath = "trasher"
 		local pathImage1 = folderPath .. "/Scene1.jpg"
 		local pathImage2 = folderPath .. "/Scene2.jpg"
 		
 		if type(getcustomasset) == "function" then
 			local requestFunc = request or http_request or (syn and syn.request)
 			
-			-- Asegurar que la carpeta 'assets' exista
+			-- Asegurar que la carpeta 'trasher' exista
 			if type(makefolder) == "function" and type(isfolder) == "function" then
 				if not isfolder(folderPath) then
 					makefolder(folderPath)
 				end
 			end
 			
-			-- Función para descargar (si no existe) y cargar la imagen
+			-- Función robusta para descargar (si no existe) y cargar la imagen
 			local function ensureAndLoadImage(url, path)
 				if type(isfile) == "function" and type(writefile) == "function" and requestFunc then
 					if not isfile(path) then
-						-- Evitar intentar descargar si el usuario no puso un enlace válido
 						if url:match("^http") then
 							local req = requestFunc({Url = url, Method = "GET"})
 							if req and type(req) == "table" and req.Body then
@@ -1020,7 +1019,7 @@ LoadingFrame.Version.Text = Release
 				return success and asset or ""
 			end
 
-			-- Procesar ambas imágenes
+			-- Procesar ambas imágenes en la nueva carpeta
 			local asset1 = ensureAndLoadImage(urlScene1, pathImage1)
 			local asset2 = ensureAndLoadImage(urlScene2, pathImage2)
 			
@@ -1087,7 +1086,7 @@ LoadingFrame.Version.Text = Release
 			tintCorner.CornerRadius = exactRadius
 			tintCorner.Parent = darkTint
 			
-			-- 7. Lógica combinada: Interpolación + Animación Nativa de Rayfield
+			-- 7. Lógica de Sincronización de Opacidad (Sensible al Minimizar de Rayfield)
 			local fadeFactor = 0 
 			
 			local function syncAnimations()
@@ -1099,19 +1098,22 @@ LoadingFrame.Version.Text = Release
 			syncAnimations()
 			Main:GetPropertyChangedSignal("BackgroundTransparency"):Connect(syncAnimations)
 			
-			-- 8. Motor del Bucle de 3 segundos
-			local TweenService = game:GetService("TweenService")
-			local faderValue = Instance.new("NumberValue")
-			faderValue.Value = 0
+			-- 8. El motor del bucle (Sin TweenService, evitando GC y bugs de parentesco)
+			local duration = 3 -- Duración de la transición en segundos
+			local elapsed = 0
 			
-			faderValue.Changed:Connect(function(val)
-				fadeFactor = val
-				syncAnimations()
+			task.spawn(function()
+				while bgContainer and bgContainer.Parent do
+					local deltaTime = task.wait()
+					elapsed = elapsed + deltaTime
+					
+					-- Usamos una onda cosenoidal para oscilar suavemente el fadeFactor entre 0 y 1.
+					-- Un ciclo completo (ida y vuelta) tardará exactamente (duration * 2) segundos.
+					fadeFactor = (math.cos((elapsed * math.pi) / duration) + 1) / 2
+					
+					syncAnimations()
+				end
 			end)
-			
-			local tweenInfo = TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true, 1)
-			local tween = TweenService:Create(faderValue, tweenInfo, {Value = 1})
-			tween:Play()
 		end
 	end)
 	-- [FIN] INYECCIÓN DE FONDO ANIMADO (DESCARGA AUTOMÁTICA Y CROSSFADE)
