@@ -1319,7 +1319,7 @@ local imageUrl_icon = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfiel
 local fileName_icon = "rayfield_custom_ball.png"
 local customAssetId_icon = ""
 
-local imageUrl_track = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/trackX.png"
+local imageUrl_track = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/track.png"
 local fileName_track = "rayfield_custom_track.png"
 local customAssetId_track = ""
 
@@ -1355,6 +1355,8 @@ customAssetId_track = descargarAsset(imageUrl_track, fileName_track, "rbxassetid
 --  FUNCIÓN LOCAL PARA ESTILIZAR UN SWITCH COMPLETO
 -- =============================================================================
 
+local TweenService = game:GetService("TweenService")
+
 local function aplicarEstiloSwitch(toggleFrame, assetId_icon, assetId_track)
     local switchContainer = toggleFrame:FindFirstChild("Switch")
     if not switchContainer then return end
@@ -1386,6 +1388,8 @@ local function aplicarEstiloSwitch(toggleFrame, assetId_icon, assetId_track)
 
     -- 3. Modificar el Indicator (La bolita deslizante)
     local indicator = switchContainer:FindFirstChild("Indicator")
+    local customThumb = nil -- Declaración local para poder usarla en la lógica de color
+    
     if indicator then
         -- Volvemos invisible la bolita original de Rayfield
         indicator.BackgroundTransparency = 1
@@ -1397,7 +1401,7 @@ local function aplicarEstiloSwitch(toggleFrame, assetId_icon, assetId_track)
         indicator.ZIndex = customTrack.ZIndex + 1
 
         -- Inyectamos tu bolita PNG descargada de GitHub
-        local customThumb = indicator:FindFirstChild("CustomThumb")
+        customThumb = indicator:FindFirstChild("CustomThumb")
         if not customThumb then
             customThumb = Instance.new("ImageLabel")
             customThumb.Name = "CustomThumb"
@@ -1412,6 +1416,31 @@ local function aplicarEstiloSwitch(toggleFrame, assetId_icon, assetId_track)
             customThumb.Image = assetId_icon
             customThumb.ZIndex = indicator.ZIndex + 1
         end
+    end
+
+    -- 4. Sincronización pasiva y animación de color (Activo/Apagado gris)
+    if indicator and customTrack and customThumb then
+        local colorActivo = Color3.fromRGB(255, 255, 255)  -- Blanco (Muestra tus PNGs con su color original)
+        local colorApagado = Color3.fromRGB(130, 130, 130) -- Gris apagado elegante
+        
+        -- Duración y suavizado de la animación de color
+        local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+        local function sincronizarColor()
+            -- Evaluamos si la bolita se movió a la derecha (Activo) o izquierda (Inactivo)
+            local estaEncendido = indicator.Position.X.Scale > 0.4 or indicator.Position.X.Offset > 10
+            local colorObjetivo = estaEncendido and colorActivo or colorApagado
+
+            -- Aplicamos la transición suave a las dos imágenes simultáneamente
+            TweenService:Create(customTrack, tweenInfo, {ImageColor3 = colorObjetivo}):Play()
+            TweenService:Create(customThumb, tweenInfo, {ImageColor3 = colorObjetivo}):Play()
+        end
+
+        -- Escuchamos cuando Rayfield altere la posición de su indicador original
+        indicator:GetPropertyChangedSignal("Position"):Connect(sincronizarColor)
+
+        -- Sincronizamos el estado de color inicial
+        sincronizarColor()
     end
 end
 
