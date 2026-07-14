@@ -978,22 +978,51 @@ local dragOffsetMobile = 150
 Rayfield.DisplayOrder = 100
 LoadingFrame.Version.Text = Release
 
-					-- [INICIO] INYECCIÓN DE FONDO ANIMADO (LOCAL CROSSFADE)
+						-- [INICIO] INYECCIÓN DE FONDO ANIMADO (DESCARGA AUTOMÁTICA Y CROSSFADE)
 	task.spawn(function()
-		-- 1. Rutas locales de tus imágenes (asegúrate de que los nombres y mayúsculas coincidan exactamente)
-		local pathImage1 = "assets/Scene1.jpg"
-		local pathImage2 = "assets/Scene2.jpg"
+		-- 1. ENLACES RAW DE TUS IMÁGENES
+		local urlScene1 = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/Scene1.jpg" 
+		local urlScene2 = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/Scene2.jpg"
+		
+		local folderPath = "assets"
+		local pathImage1 = folderPath .. "/Scene1.jpg"
+		local pathImage2 = folderPath .. "/Scene2.jpg"
 		
 		if type(getcustomasset) == "function" then
+			local requestFunc = request or http_request or (syn and syn.request)
 			
-			-- Carga ambas imágenes desde la carpeta de tu ejecutor
-			local asset1, asset2 = "", ""
+			-- Asegurar que la carpeta 'assets' exista
+			if type(makefolder) == "function" and type(isfolder) == "function" then
+				if not isfolder(folderPath) then
+					makefolder(folderPath)
+				end
+			end
 			
-			local success1, result1 = pcall(getcustomasset, pathImage1)
-			if success1 then asset1 = result1 else warn("Rayfield | No se encontró: " .. pathImage1) end
-			
-			local success2, result2 = pcall(getcustomasset, pathImage2)
-			if success2 then asset2 = result2 else warn("Rayfield | No se encontró: " .. pathImage2) end
+			-- Función para descargar (si no existe) y cargar la imagen
+			local function ensureAndLoadImage(url, path)
+				if type(isfile) == "function" and type(writefile) == "function" and requestFunc then
+					if not isfile(path) then
+						-- Evitar intentar descargar si el usuario no puso un enlace válido
+						if url:match("^http") then
+							local req = requestFunc({Url = url, Method = "GET"})
+							if req and type(req) == "table" and req.Body then
+								writefile(path, req.Body)
+							else
+								warn("Rayfield | Falló la descarga de: " .. path)
+							end
+						else
+							warn("Rayfield | Enlace inválido para: " .. path)
+						end
+					end
+				end
+				
+				local success, asset = pcall(getcustomasset, path)
+				return success and asset or ""
+			end
+
+			-- Procesar ambas imágenes
+			local asset1 = ensureAndLoadImage(urlScene1, pathImage1)
+			local asset2 = ensureAndLoadImage(urlScene2, pathImage2)
 			
 			-- 2. Empujamos los elementos de Rayfield hacia adelante (ZIndex)
 			for _, obj in ipairs(Main:GetDescendants()) do
@@ -1038,7 +1067,7 @@ LoadingFrame.Version.Text = Release
 			bgImage2.ScaleType = Enum.ScaleType.Crop
 			bgImage2.ClipsDescendants = true
 			bgImage2.Image = asset2
-			bgImage2.ImageTransparency = 1 -- Comienza oculta
+			bgImage2.ImageTransparency = 1 
 			
 			local corner2 = Instance.new("UICorner")
 			corner2.CornerRadius = exactRadius
@@ -1059,22 +1088,18 @@ LoadingFrame.Version.Text = Release
 			tintCorner.Parent = darkTint
 			
 			-- 7. Lógica combinada: Interpolación + Animación Nativa de Rayfield
-			local fadeFactor = 0 -- Rango de 0 a 1 para hacer la mezcla de imágenes
+			local fadeFactor = 0 
 			
 			local function syncAnimations()
 				local baseTrans = Main.BackgroundTransparency
-				
-				-- Calcula la opacidad tomando en cuenta si el usuario oculta/muestra la UI
 				bgImage1.ImageTransparency = baseTrans + (1 - baseTrans) * fadeFactor
 				bgImage2.ImageTransparency = baseTrans + (1 - baseTrans) * (1 - fadeFactor)
-				
-				-- El tinte oscuro se adapta a la transparencia de la ventana principal
 				darkTint.BackgroundTransparency = 0.35 + (baseTrans * 0.65)
 			end
 			syncAnimations()
 			Main:GetPropertyChangedSignal("BackgroundTransparency"):Connect(syncAnimations)
 			
-			-- 8. El Motor del Bucle de 3 segundos
+			-- 8. Motor del Bucle de 3 segundos
 			local TweenService = game:GetService("TweenService")
 			local faderValue = Instance.new("NumberValue")
 			faderValue.Value = 0
@@ -1084,13 +1109,12 @@ LoadingFrame.Version.Text = Release
 				syncAnimations()
 			end)
 			
-			-- TweenInfo: 3 segundos, suave (Sine), InOut, infinito (-1), regresa (true), delay de 1s al tope (1)
 			local tweenInfo = TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true, 1)
 			local tween = TweenService:Create(faderValue, tweenInfo, {Value = 1})
 			tween:Play()
 		end
 	end)
-	-- [FIN] INYECCIÓN DE FONDO ANIMADO (LOCAL CROSSFADE)
+	-- [FIN] INYECCIÓN DE FONDO ANIMADO (DESCARGA AUTOMÁTICA Y CROSSFADE)
 
 					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (V7 - SOLO TRASLUCIDEZ Y TOPBAR BLANCO)
 	task.spawn(function()
