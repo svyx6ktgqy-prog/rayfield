@@ -1113,6 +1113,77 @@ LoadingFrame.Version.Text = Release
 	end)
 	-- [FIN] INYECCIÓN DE FONDO ANIMADO TRASHER (SÚPER CONTROLADO)
 
+	-- [INICIO] EFECTO HIPNÓTICO DE COLORES EN TEXTO
+	task.spawn(function()
+		local RunService = game:GetService("RunService")
+		print("Trasher Debug | Iniciando motor de ola de colores...")
+
+		-- 1. TU PALETA DE COLORES
+		local colors = {
+			Color3.fromRGB(255, 0, 0),    -- Rojo
+			Color3.fromRGB(25, 25, 25),   -- Negro (Ligeramente aclarado para que se pueda leer sobre tu fondo)
+			Color3.fromRGB(153, 0, 255)   -- Morado (Vibrante)
+		}
+
+		-- 2. CONTROLES DEL EFECTO
+		local colorSpeed = 1.5   -- Velocidad general a la que cambian los colores
+		local waveSpread = 0.005 -- Qué tan "ancha" es la ola (modifica esto para cambiar el efecto 360)
+
+		-- Función matemática para mezclar los colores infinitamente (Lerp)
+		local function getWaveColor(timeOffset)
+			local totalColors = #colors
+			local scaledTime = timeOffset % totalColors
+			local index = math.floor(scaledTime) + 1
+			local nextIndex = (index % totalColors) + 1
+			local fraction = scaledTime % 1
+			
+			return colors[index]:Lerp(colors[nextIndex], fraction)
+		end
+
+		-- 3. ESCÁNER DE TEXTOS DE RAYFIELD
+		local textObjects = {}
+		
+		-- Filtramos solo lo que contiene letras
+		local function cacheTextObject(obj)
+			if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+				table.insert(textObjects, obj)
+			end
+		end
+
+		-- Escanear los textos que ya existen al abrir el menú
+		for _, obj in ipairs(Main:GetDescendants()) do
+			cacheTextObject(obj)
+		end
+
+		-- Si Rayfield crea botones nuevos después, el script los atrapa y los mete a la ola
+		Main.DescendantAdded:Connect(cacheTextObject)
+
+		-- 4. MOTOR DE RENDERIZADO INFINITO
+		RunService.Heartbeat:Connect(function()
+			-- Protecciones anti-crasheo y ahorro de batería
+			if not Main or not Main.Parent then return end
+			if not Main.Visible then return end 
+			
+			local currentTime = tick() * colorSpeed
+			
+			-- Recorremos todos los textos de atrás hacia adelante
+			for i = #textObjects, 1, -1 do
+				local textObj = textObjects[i]
+				
+				-- Si un texto fue borrado por Rayfield, lo sacamos de la memoria para evitar lag
+				if not textObj.Parent then
+					table.remove(textObjects, i)
+				else
+					-- Aquí ocurre la magia 360: sumamos la posición X e Y del texto en la pantalla
+					-- Esto hace que el color fluya en diagonal a través de todo el menú
+					local screenOffset = (textObj.AbsolutePosition.X + textObj.AbsolutePosition.Y) * waveSpread
+					textObj.TextColor3 = getWaveColor(currentTime - screenOffset)
+				end
+			end
+		end)
+	end)
+	-- [FIN] EFECTO HIPNÓTICO DE COLORES EN TEXTO
+
 					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (V7 - SOLO TRASLUCIDEZ Y TOPBAR BLANCO)
 	task.spawn(function()
 		local colorRojo = Color3.fromRGB(255, 0, 0)
