@@ -978,25 +978,35 @@ local dragOffsetMobile = 150
 Rayfield.DisplayOrder = 100
 LoadingFrame.Version.Text = Release
 
-			-- [INICIO] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
+				-- [INICIO] INYECCIÓN DE FONDO ANIMADO (CROSSFADE)
 	task.spawn(function()
-		-- Tu enlace directo (Ya actualizado al .jpeg)
-		local bgImageUrl = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/bgHD.jpeg" 
-		local bgImageName = "BgHD_Background.jpeg"
+		-- 1. ENLACES DE LAS DOS IMÁGENES (Reemplaza con tus URLs RAW)
+		local bgImageUrl1 = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/bgHD.jpeg" 
+		local bgImageUrl2 = "ENLACE_DE_TU_SEGUNDA_IMAGEN_AQUI.jpeg" 
+		
+		local bgImageName1 = "BgHD_Anim1.jpeg"
+		local bgImageName2 = "BgHD_Anim2.jpeg"
 		
 		if type(writefile) == "function" and type(getcustomasset) == "function" then
-			-- Aseguramos la función de solicitud según el ejecutor
 			local requestFunc = request or http_request or (syn and syn.request)
 			
-			if not isfile(bgImageName) and requestFunc then
-				local req = requestFunc({Url = bgImageUrl, Method = "GET"})
-				if req and type(req) == "table" and req.Body then
-					writefile(bgImageName, req.Body)
+			-- Función para descargar o cargar desde la caché local de exploit
+			local function ensureImage(url, name)
+				if not isfile(name) and requestFunc then
+					local req = requestFunc({Url = url, Method = "GET"})
+					if req and type(req) == "table" and req.Body then
+						writefile(name, req.Body)
+					end
 				end
+				local success, asset = pcall(getcustomasset, name)
+				return success and asset or ""
 			end
+
+			-- Carga ambas imágenes
+			local asset1 = ensureImage(bgImageUrl1, bgImageName1)
+			local asset2 = ensureImage(bgImageUrl2, bgImageName2)
 			
-			-- 1. EL TRUCO MAESTRO: Empujamos todos los elementos de Rayfield hacia adelante (Capa 10)
-			-- Así evitamos que la imagen tape los botones.
+			-- 2. Empujamos los elementos de Rayfield hacia adelante (ZIndex)
 			for _, obj in ipairs(Main:GetDescendants()) do
 				if obj:IsA("GuiObject") then
 					obj.ZIndex = obj.ZIndex + 10
@@ -1006,32 +1016,51 @@ LoadingFrame.Version.Text = Release
 			local mainCorner = Main:FindFirstChildOfClass("UICorner")
 			local exactRadius = mainCorner and mainCorner.CornerRadius or UDim2.new(0, 8)
 			
-			-- 2. Creamos tu imagen en la Capa 1 (Justo encima del gris oscuro)
-			local bgImage = Instance.new("ImageLabel")
-			bgImage.Name = "CustomBackgroundRebug"
-			bgImage.Parent = Main
-			bgImage.Size = UDim2.new(1, 0, 1, 0)
-			bgImage.Position = UDim2.new(0, 0, 0, 0)
-			bgImage.ZIndex = 1 -- Tapa el gris de Rayfield, pero respeta los elementos
-			bgImage.BackgroundTransparency = 1
-			bgImage.ScaleType = Enum.ScaleType.Crop
-			bgImage.ClipsDescendants = true
+			-- 3. Contenedor Maestro de las imágenes
+			local bgContainer = Instance.new("Frame")
+			bgContainer.Name = "CustomAnimatedBackground"
+			bgContainer.Parent = Main
+			bgContainer.Size = UDim2.new(1, 0, 1, 0)
+			bgContainer.BackgroundTransparency = 1
+			bgContainer.ZIndex = 1
 			
-			local corner = Instance.new("UICorner")
-			corner.CornerRadius = exactRadius
-			corner.Parent = bgImage
+			local cornerContainer = Instance.new("UICorner")
+			cornerContainer.CornerRadius = exactRadius
+			cornerContainer.Parent = bgContainer
 			
-			local success, asset = pcall(getcustomasset, bgImageName)
-			if success then bgImage.Image = asset end
+			-- 4. Construcción de Imagen 1 (Base)
+			local bgImage1 = Instance.new("ImageLabel")
+			bgImage1.Parent = bgContainer
+			bgImage1.Size = UDim2.new(1, 0, 1, 0)
+			bgImage1.BackgroundTransparency = 1
+			bgImage1.ScaleType = Enum.ScaleType.Crop
+			bgImage1.ClipsDescendants = true
+			bgImage1.Image = asset1
 			
-			-- 3. Creamos el tinte oscuro en la Capa 2 (Para que las letras blancas resalten)
+			local corner1 = Instance.new("UICorner")
+			corner1.CornerRadius = exactRadius
+			corner1.Parent = bgImage1
+			
+			-- 5. Construcción de Imagen 2 (Capa animada superior)
+			local bgImage2 = Instance.new("ImageLabel")
+			bgImage2.Parent = bgContainer
+			bgImage2.Size = UDim2.new(1, 0, 1, 0)
+			bgImage2.BackgroundTransparency = 1
+			bgImage2.ScaleType = Enum.ScaleType.Crop
+			bgImage2.ClipsDescendants = true
+			bgImage2.Image = asset2
+			bgImage2.ImageTransparency = 1 -- Comienza oculta
+			
+			local corner2 = Instance.new("UICorner")
+			corner2.CornerRadius = exactRadius
+			corner2.Parent = bgImage2
+			
+			-- 6. Tinte oscuro para mejorar la legibilidad del texto
 			local darkTint = Instance.new("Frame")
 			darkTint.Name = "DarkOverlay"
-			darkTint.Parent = bgImage
+			darkTint.Parent = bgContainer
 			darkTint.Size = UDim2.new(1, 0, 1, 0)
 			darkTint.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-			-- ⚠️ Si quieres ver la imagen MÁS CLARA, baja el 0.35 a 0.1 o 0.2
-			-- ⚠️ Si la quieres MÁS OSCURA, súbelo a 0.5 o 0.6
 			darkTint.BackgroundTransparency = 0.1 
 			darkTint.ZIndex = 2 
 			darkTint.BorderSizePixel = 0
@@ -1040,17 +1069,40 @@ LoadingFrame.Version.Text = Release
 			tintCorner.CornerRadius = exactRadius
 			tintCorner.Parent = darkTint
 			
-			-- Sincronizamos animaciones de transparencia nativas de Rayfield
+			-- 7. Lógica combinada: Interpolación + Animación Nativa de Rayfield
+			local fadeFactor = 0 -- Rango de 0 a 1 para hacer la mezcla de imágenes
+			
 			local function syncAnimations()
 				local baseTrans = Main.BackgroundTransparency
-				bgImage.ImageTransparency = baseTrans
+				
+				-- Se calcula la opacidad tomando en cuenta si el usuario oculta/muestra el menú de Rayfield
+				bgImage1.ImageTransparency = baseTrans + (1 - baseTrans) * fadeFactor
+				bgImage2.ImageTransparency = baseTrans + (1 - baseTrans) * (1 - fadeFactor)
+				
+				-- El tinte oscuro
 				darkTint.BackgroundTransparency = 0.35 + (baseTrans * 0.65)
 			end
 			syncAnimations()
 			Main:GetPropertyChangedSignal("BackgroundTransparency"):Connect(syncAnimations)
+			
+			-- 8. El Motor del Bucle de 3 segundos
+			local TweenService = game:GetService("TweenService")
+			local faderValue = Instance.new("NumberValue")
+			faderValue.Value = 0
+			
+			faderValue.Changed:Connect(function(val)
+				fadeFactor = val
+				syncAnimations()
+			end)
+			
+			-- Parámetros del Tween: 3 segundos, suave (Sine), In/Out, bucle infinito (-1), regresa automático (true)
+			-- El '1' del final significa que esperará 1 segundo exacto en su punto máximo antes de volver a la primera imagen
+			local tweenInfo = TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true, 1)
+			local tween = TweenService:Create(faderValue, tweenInfo, {Value = 1})
+			tween:Play()
 		end
 	end)
-	-- [FIN] INYECCIÓN DE FONDO PERSONALIZADO REBUG V3
+	-- [FIN] INYECCIÓN DE FONDO ANIMADO (CROSSFADE)
 
 					-- [INICIO] INYECCIÓN BLINDADA COMPLETA (V7 - SOLO TRASLUCIDEZ Y TOPBAR BLANCO)
 	task.spawn(function()
