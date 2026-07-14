@@ -1319,7 +1319,7 @@ local imageUrl_icon = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfiel
 local fileName_icon = "rayfield_custom_ball.png"
 local customAssetId_icon = ""
 
-local imageUrl_track = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/trackD.png"
+local imageUrl_track = "https://raw.githubusercontent.com/svyx6ktgqy-prog/rayfield/refs/heads/main/assets/trackX.png"
 local fileName_track = "rayfield_custom_track.png"
 local customAssetId_track = ""
 
